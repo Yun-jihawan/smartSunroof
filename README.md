@@ -4,14 +4,16 @@
     Mode_bit int형 analog
     Opacity_bit int형 analog
 
-2. 조도 센서 값 수신
-    Analog Read, 10k ohm 저항
-    Inside : PA1 / Outside : PA0
-
-3. 빗물감지 센서 값 수신
-    Analog Read
-    PC5
-
 4. 모터 구동 (Sunroof)
 
 5. 투명도 조절 (flim)
+    -> 우선적으로 film 조절하는 값을 LED로 넣어두었음.
+
+### 완료
+2. 조도 센서 값 수신 (1s)
+    Analog Read, 10k ohm 저항
+    Inside : PA1 / Outside : PA0
+
+3. 빗물감지 센서 값 수신 (10s)
+    Analog Read
+    PC5
