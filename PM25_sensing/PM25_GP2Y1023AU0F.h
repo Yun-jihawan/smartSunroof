@@ -2,6 +2,7 @@
 #define __SHARP_DUST_SENSOR_H
 
 #include "stm32l0xx_hal.h"
+#include <stdio.h>
 
 typedef struct
 {
