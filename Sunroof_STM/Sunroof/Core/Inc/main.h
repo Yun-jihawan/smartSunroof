@@ -73,6 +73,8 @@ void Error_Handler(void);
 #define LD2_GPIO_Port GPIOA
 #define RAIN_Pin GPIO_PIN_5
 #define RAIN_GPIO_Port GPIOC
+#define IS_RAIN_Pin GPIO_PIN_2
+#define IS_RAIN_GPIO_Port GPIOB
 #define OPACITY_Pin GPIO_PIN_8
 #define OPACITY_GPIO_Port GPIOC
 #define TMS_Pin GPIO_PIN_13

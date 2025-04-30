@@ -1,35 +1,96 @@
-20:12:02 **** Incremental Build of configuration Debug for project Sunroof ****
+10:31:02 **** Build of configuration Debug for project Sunroof ****
 make -j12 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m0plus -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L073xx -c -I../Core/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L0xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Sunroof.elf" @"objects.list"   -mcpu=cortex-m0plus -T"C:\Users\USER\OneDrive\Desktop\Proj1_Sunroof\Sunroof_STM\Sunroof\STM32L073RZTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Sunroof.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Sunroof.elf
+ 
 arm-none-eabi-size  Sunroof.elf 
+arm-none-eabi-objdump -h -S Sunroof.elf  > "Sunroof.list"
    text	   data	    bss	    dec	    hex	filename
-  13020	     12	   1804	  14836	   39f4	Sunroof.elf
+  13044	     12	   1804	  14860	   3a0c	Sunroof.elf
 Finished building: default.size.stdout
  
-09:05:10 **** Incremental Build of configuration Debug for project Sunroof ****
+Finished building: Sunroof.list
+ 
+10:31:11 **** Incremental Build of configuration Debug for project Sunroof ****
 make -j12 all 
 arm-none-eabi-size  Sunroof.elf 
    text	   data	    bss	    dec	    hex	filename
-  13020	     12	   1804	  14836	   39f4	Sunroof.elf
+  13044	     12	   1804	  14860	   3a0c	Sunroof.elf
 Finished building: default.size.stdout
  
-09:05:46 **** Incremental Build of configuration Debug for project Sunroof ****
+10:36:18 **** Incremental Build of configuration Debug for project Sunroof ****
 make -j12 all 
 arm-none-eabi-size  Sunroof.elf 
    text	   data	    bss	    dec	    hex	filename
-  13020	     12	   1804	  14836	   39f4	Sunroof.elf
+  13044	     12	   1804	  14860	   3a0c	Sunroof.elf
 Finished building: default.size.stdout
  
-09:05:55 **** Incremental Build of configuration Debug for project Sunroof ****
+10:36:22 **** Incremental Build of configuration Debug for project Sunroof ****
 make -j12 all 
 arm-none-eabi-size  Sunroof.elf 
    text	   data	    bss	    dec	    hex	filename
-  13020	     12	   1804	  14836	   39f4	Sunroof.elf
+  13044	     12	   1804	  14860	   3a0c	Sunroof.elf
 Finished building: default.size.stdout
  
-09:06:00 **** Incremental Build of configuration Debug for project Sunroof ****
+10:44:34 **** Incremental Build of configuration Debug for project Sunroof ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/adc.c" -mcpu=cortex-m0plus -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L073xx -c -I../Core/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L0xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/adc.d" -MT"Core/Src/adc.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/adc.o"
+arm-none-eabi-gcc "../Core/Src/gpio.c" -mcpu=cortex-m0plus -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L073xx -c -I../Core/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L0xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/gpio.d" -MT"Core/Src/gpio.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/gpio.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m0plus -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L073xx -c -I../Core/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L0xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/stm32l0xx_hal_msp.c" -mcpu=cortex-m0plus -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L073xx -c -I../Core/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L0xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32l0xx_hal_msp.d" -MT"Core/Src/stm32l0xx_hal_msp.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/stm32l0xx_hal_msp.o"
+arm-none-eabi-gcc "../Core/Src/stm32l0xx_it.c" -mcpu=cortex-m0plus -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L073xx -c -I../Core/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L0xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32l0xx_it.d" -MT"Core/Src/stm32l0xx_it.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/stm32l0xx_it.o"
+arm-none-eabi-gcc "../Core/Src/usart.c" -mcpu=cortex-m0plus -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L073xx -c -I../Core/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L0xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/usart.d" -MT"Core/Src/usart.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/usart.o"
+../Core/Src/main.c:37:8: error: no macro name given in #define directive
+   37 | #define
+      |        ^
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:110:75: error: 'RAIN_TH' undeclared (first use in this function)
+  110 |           HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, (rain_sense < RAIN_TH));
+      |                                                                           ^~~~~~~
+../Core/Src/main.c:110:75: note: each undeclared identifier is reported only once for each function it appears in
+make: *** [Core/Src/subdir.mk:46: Core/Src/main.o] Error 1
+make: *** Waiting for unfinished jobs....
+"make -j12 all" terminated with exit code 2. Build might be incomplete.
+10:45:05 **** Incremental Build of configuration Debug for project Sunroof ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m0plus -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L073xx -c -I../Core/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L0xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Sunroof.elf" @"objects.list"   -mcpu=cortex-m0plus -T"C:\Users\USER\OneDrive\Desktop\Proj1_Sunroof\Sunroof_STM\Sunroof\STM32L073RZTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Sunroof.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Sunroof.elf
+ 
+arm-none-eabi-size  Sunroof.elf 
+arm-none-eabi-objdump -h -S Sunroof.elf  > "Sunroof.list"
+   text	   data	    bss	    dec	    hex	filename
+  13156	     12	   1804	  14972	   3a7c	Sunroof.elf
+Finished building: default.size.stdout
+ 
+Finished building: Sunroof.list
+ 
+10:45:13 **** Incremental Build of configuration Debug for project Sunroof ****
 make -j12 all 
 arm-none-eabi-size  Sunroof.elf 
    text	   data	    bss	    dec	    hex	filename
-  13020	     12	   1804	  14836	   39f4	Sunroof.elf
+  13156	     12	   1804	  14972	   3a7c	Sunroof.elf
+Finished building: default.size.stdout
+ 
+10:45:39 **** Incremental Build of configuration Debug for project Sunroof ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m0plus -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L073xx -c -I../Core/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc -I../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L0xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Sunroof.elf" @"objects.list"   -mcpu=cortex-m0plus -T"C:\Users\USER\OneDrive\Desktop\Proj1_Sunroof\Sunroof_STM\Sunroof\STM32L073RZTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Sunroof.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Sunroof.elf
+ 
+arm-none-eabi-size  Sunroof.elf 
+arm-none-eabi-objdump -h -S Sunroof.elf  > "Sunroof.list"
+   text	   data	    bss	    dec	    hex	filename
+  13156	     12	   1804	  14972	   3a7c	Sunroof.elf
+Finished building: default.size.stdout
+ 
+Finished building: Sunroof.list
+ 
+10:45:42 **** Incremental Build of configuration Debug for project Sunroof ****
+make -j12 all 
+arm-none-eabi-size  Sunroof.elf 
+   text	   data	    bss	    dec	    hex	filename
+  13156	     12	   1804	  14972	   3a7c	Sunroof.elf
 Finished building: default.size.stdout
  

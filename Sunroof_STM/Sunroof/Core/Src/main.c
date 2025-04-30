@@ -34,7 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define RAIN_TH 3200
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -58,6 +58,7 @@ uint16_t HW_AdcReadChannel( uint32_t Channel );
 /* USER CODE BEGIN 0 */
 volatile uint16_t in_illum = 0;
 volatile uint16_t out_illum = 0;
+volatile uint16_t rain_sense = 0;
 /* USER CODE END 0 */
 
 /**
@@ -101,9 +102,12 @@ int main(void)
   {
 	  in_illum = HW_AdcReadChannel(ADC_CHANNEL_1);
 	  out_illum = HW_AdcReadChannel(ADC_CHANNEL_0);
+	  rain_sense = HW_AdcReadChannel(ADC_CHANNEL_15);
 
 	  // 내부 조도가 밖의 조도보다 낮으면 켜짐
 	  HAL_GPIO_WritePin(OPACITY_GPIO_Port, OPACITY_Pin, (in_illum < (out_illum - 50)));
+	  // 비 감지 시 켜짐
+	  HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, (rain_sense > RAIN_TH));
 
     /* USER CODE END WHILE */
 
