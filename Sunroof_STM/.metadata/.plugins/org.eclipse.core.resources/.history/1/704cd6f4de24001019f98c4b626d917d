@@ -1,0 +1,16 @@
+/*
+ * Rain.h
+ *
+ *  Created on: Apr 29, 2025
+ *      Author: USER
+ */
+
+#ifndef INC_RAIN_H_
+#define INC_RAIN_H_
+
+/*
+#define RAIN_Pin GPIO_PIN_5
+#define RAIN_GPIO_Port GPIOC
+*/
+
+#endif /* INC_RAIN_H_ */

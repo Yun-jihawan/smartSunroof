@@ -1,0 +1,35 @@
+20:12:02 **** Incremental Build of configuration Debug for project Sunroof ****
+make -j12 all 
+arm-none-eabi-size  Sunroof.elf 
+   text	   data	    bss	    dec	    hex	filename
+  13020	     12	   1804	  14836	   39f4	Sunroof.elf
+Finished building: default.size.stdout
+ 
+09:05:10 **** Incremental Build of configuration Debug for project Sunroof ****
+make -j12 all 
+arm-none-eabi-size  Sunroof.elf 
+   text	   data	    bss	    dec	    hex	filename
+  13020	     12	   1804	  14836	   39f4	Sunroof.elf
+Finished building: default.size.stdout
+ 
+09:05:46 **** Incremental Build of configuration Debug for project Sunroof ****
+make -j12 all 
+arm-none-eabi-size  Sunroof.elf 
+   text	   data	    bss	    dec	    hex	filename
+  13020	     12	   1804	  14836	   39f4	Sunroof.elf
+Finished building: default.size.stdout
+ 
+09:05:55 **** Incremental Build of configuration Debug for project Sunroof ****
+make -j12 all 
+arm-none-eabi-size  Sunroof.elf 
+   text	   data	    bss	    dec	    hex	filename
+  13020	     12	   1804	  14836	   39f4	Sunroof.elf
+Finished building: default.size.stdout
+ 
+09:06:00 **** Incremental Build of configuration Debug for project Sunroof ****
+make -j12 all 
+arm-none-eabi-size  Sunroof.elf 
+   text	   data	    bss	    dec	    hex	filename
+  13020	     12	   1804	  14836	   39f4	Sunroof.elf
+Finished building: default.size.stdout
+ 
