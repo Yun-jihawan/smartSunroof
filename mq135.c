@@ -1,51 +1,105 @@
 
-MQ135_HandleTypeDef hmq_in;
-MQ135_HandleTypeDef hmq_out;
+#include "mq135.h"
+#include <math.h>
 
-typedef struct
-{
-	double benzene_ppm_in;
-	double co_ppm_in;
-	double co2_ppm_in;
-	double smoke_ppm_in;
+static const float aBezneze = 23.4461175f;
+static const float bBenzene = -3.98724605f;
+static const float aCor = 0.00035f;
+static const float bCor = 0.02718f;
+static const float cCor = 1.39538f;
+static const float dCor = 0.0018f;
 
-	double benzene_ppm_out;
-	double co_ppm_out;
-	double co2_ppm_out;
-	double smoke_ppm_out;
-}mq135_data;
+// Additional gas curve coefficients
+static const float aCO = -0.36f;
+static const float bCO = 1.72f;
+static const float aCO2 = -0.38f;
+static const float bCO2 = 3.75f;
+static const float aSmoke = -0.42f;
+static const float bSmoke = 2.90f;
 
-mq135_data mq135;
+static float MQ135_ReadAverageADC(MQ135_HandleTypeDef* hmq) {
+    if (hmq == NULL || hmq->hadc == NULL) return 0.0f;
 
-void StartSensorTask(void const * argument)
-{
-	mq135_data *mq135 = (mq135_data *)argument;
-  for(;;)
-  {
-	  mq135->benzene_ppm_in = MQ135_GetPPM(&hmq_in)/10.000;
-	  mq135->co_ppm_in = MQ135_GetCO_PPM(&hmq_in)/9.00;
-	  mq135->co2_ppm_in = MQ135_GetCO2_PPM(&hmq_in)/5.00;
-	  mq135->smoke_ppm_in = MQ135_GetSmoke_PPM(&hmq_in)/50.00;
+    float sum = 0;
+    ADC_ChannelConfTypeDef sConfig = {0};
 
-	  mq135->benzene_ppm_out = MQ135_GetPPM(&hmq_out)/10.000;
-	  mq135->co_ppm_out = MQ135_GetCO_PPM(&hmq_out)/9.00;
-	  mq135->co2_ppm_out = MQ135_GetCO2_PPM(&hmq_out)/5.00;
-	  mq135->smoke_ppm_out = MQ135_GetSmoke_PPM(&hmq_out)/50.00;
+    sConfig.Channel = hmq->adc_channel;
+    //sConfig.Rank = ADC_REGULAR_RANK_1;
+    //sConfig.SamplingTime = ADC_SAMPLETIME_39CYCLES_5;
 
+    HAL_ADC_ConfigChannel(hmq->hadc, &sConfig);
 
-	  //TeraTerm으로 uart통신해서 출력하기
-	  printf("\r\n=== Indoor Sensor ===\r\n");
-	  printf("Benzene : %.3f ppm \r\n", mq135->benzene_ppm_in);
-	  printf("CO : %.2f ppm\r\n", mq135->co_ppm_in);
-	  printf("CO2 : %.2f ppm\r\n", mq135->co2_ppm_in);
-	  printf("Smoke : %.2f ppm\r\n", mq135->smoke_ppm_in);
+    for (int i = 0; i < hmq->average_count; i++) {
+        HAL_ADC_Start(hmq->hadc);
+        if (HAL_ADC_PollForConversion(hmq->hadc, HAL_MAX_DELAY) == HAL_OK) {
+            sum += HAL_ADC_GetValue(hmq->hadc);
+        }
+        HAL_ADC_Stop(hmq->hadc);
+    }
 
-	  printf("\r\n=== Outdoor Sensor ===\r\n");
-	  printf("Benzene : %.3f ppm \r\n", mq135->benzene_ppm_out);
-	  printf("CO : %.2f ppm\r\n", mq135->co_ppm_out);
-	  printf("CO2 : %.2f ppm\r\n", mq135->co2_ppm_out);
-	  printf("Smoke : %.2f ppm\r\n", mq135->smoke_ppm_out);
+    return sum / hmq->average_count;
+}
 
-    osDelay(5000);
-  }
+static float MQ135_GetResistance(MQ135_HandleTypeDef* hmq) {
+    float adc_avg = MQ135_ReadAverageADC(hmq);
+    float voltage = (adc_avg / ((1 << hmq->adc_bits) - 1)) * hmq->vref;
+    if (voltage <= 0.0f) return 1e9f; // Avoid divide-by-zero
+    return ((hmq->vref / voltage) - 1.0f) * hmq->RL;
+}
+
+static float MQ135_GetCorrection(float t, float h) {
+    return aCor * t * t - bCor * t + cCor - (h - 33.0f) * dCor;
+}
+
+void MQ135_Init(MQ135_HandleTypeDef* hmq, ADC_HandleTypeDef* hadc, uint32_t channel, int average, uint8_t bits, float vref) {
+    if (hmq == NULL) return;
+    hmq->hadc = hadc;
+    hmq->adc_channel = channel;
+    hmq->adc_bits = bits;
+    hmq->vref = vref;
+    hmq->average_count = average;
+    hmq->RL = MQ135_DEFAULT_RL;
+    hmq->R0 = 1.0f;
+}
+
+void MQ135_SetRL(MQ135_HandleTypeDef* hmq, float RL) {
+    if (hmq) hmq->RL = RL;
+}
+
+void MQ135_SetR0(MQ135_HandleTypeDef* hmq, float R0) {
+    if (hmq) hmq->R0 = R0;
+}
+
+float MQ135_Calibrate(MQ135_HandleTypeDef* hmq, int cPPM) {
+    float RS = MQ135_GetResistance(hmq);
+    hmq->R0 = RS * powf((float)cPPM / aBezneze, 1.0f / -bBenzene);
+    return hmq->R0;
+}
+
+double MQ135_GetPPM(MQ135_HandleTypeDef* hmq) {
+    float RS = MQ135_GetResistance(hmq);
+    return aBezneze * powf(RS / hmq->R0, bBenzene);
+}
+
+double MQ135_GetCorrectedPPM(MQ135_HandleTypeDef* hmq, float temperature, float humidity) {
+    float RS = MQ135_GetResistance(hmq) / MQ135_GetCorrection(temperature, humidity);
+    return aBezneze * powf(RS / hmq->R0, bBenzene);
+}
+
+double MQ135_GetCO_PPM(MQ135_HandleTypeDef* hmq) {
+    float RS = MQ135_GetResistance(hmq);
+    float ratio = RS / hmq->R0;
+    return powf(10.0f, (aCO * log10f(ratio) + bCO));
+}
+
+double MQ135_GetCO2_PPM(MQ135_HandleTypeDef* hmq) {
+    float RS = MQ135_GetResistance(hmq);
+    float ratio = RS / hmq->R0;
+    return powf(10.0f, (aCO2 * log10f(ratio) + bCO2));
+}
+
+double MQ135_GetSmoke_PPM(MQ135_HandleTypeDef* hmq) {
+    float RS = MQ135_GetResistance(hmq);
+    float ratio = RS / hmq->R0;
+    return powf(10.0f, (aSmoke * log10f(ratio) + bSmoke));
 }
