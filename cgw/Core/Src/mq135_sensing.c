@@ -17,7 +17,7 @@ typedef struct
 
 mq135_data mq135;
 
-void StartSensorTask(void const *argument)
+void StartAqReaderTask(void *argument)
 {
     mq135_data *mq135 = (mq135_data *)argument;
     for (;;)
