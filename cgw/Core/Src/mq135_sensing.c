@@ -1,13 +1,13 @@
 #include "mq135.h"
 
-MQ135_HandleTypeDef hmq_in;
-MQ135_HandleTypeDef hmq_out;
-
 mq135_data mq135;
 
 void StartAqReaderTask(void *argument)
 {
     mq135_data *mq135 = (mq135_data *)argument;
+    MQ135_HandleTypeDef hmq_in;
+    MQ135_HandleTypeDef hmq_out;
+
     for (;;)
     {
         mq135->benzene_ppm_in = MQ135_GetPPM(&hmq_in) / 10.000;
