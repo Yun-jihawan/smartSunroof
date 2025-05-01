@@ -61,6 +61,12 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define MCO_Pin GPIO_PIN_0
 #define MCO_GPIO_Port GPIOH
+#define ENC_A_Pin GPIO_PIN_0
+#define ENC_A_GPIO_Port GPIOC
+#define ENC_A_EXTI_IRQn EXTI0_1_IRQn
+#define ENC_B_Pin GPIO_PIN_1
+#define ENC_B_GPIO_Port GPIOC
+#define ENC_B_EXTI_IRQn EXTI0_1_IRQn
 #define OUT_ILLUMI_Pin GPIO_PIN_0
 #define OUT_ILLUMI_GPIO_Port GPIOA
 #define IN_ILLUMI_Pin GPIO_PIN_1
@@ -71,10 +77,14 @@ void Error_Handler(void);
 #define USART_RX_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
+#define ROOF_DIR_Pin GPIO_PIN_6
+#define ROOF_DIR_GPIO_Port GPIOA
 #define RAIN_Pin GPIO_PIN_5
 #define RAIN_GPIO_Port GPIOC
 #define IS_RAIN_Pin GPIO_PIN_2
 #define IS_RAIN_GPIO_Port GPIOB
+#define ROOF_BRAKE_Pin GPIO_PIN_7
+#define ROOF_BRAKE_GPIO_Port GPIOC
 #define OPACITY_Pin GPIO_PIN_8
 #define OPACITY_GPIO_Port GPIOC
 #define TMS_Pin GPIO_PIN_13

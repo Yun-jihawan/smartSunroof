@@ -25,7 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "sensor.h"
+#include "roof.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -35,8 +36,13 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define RAIN_TH 3200
 #define RAIN_PERIOD 10
+
+#define OPEN 1
+#define CLOSE 0
+#define STOP 2
+
+#define ROOF_MAX 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,29 +55,34 @@
 /* USER CODE BEGIN PV */
 
 // Sensor Data & UART Send Data
-volatile uint16_t in_illum = 0;		// ADC를 통해 조도 값 입력, UART를 통해 STM에 데이터 송신해야함
-volatile uint16_t out_illum = 0;	// ADC를 통해 조도 값 입력, UART를 통해 STM에 데이터 송신해야함
-volatile uint8_t rain_state = 0; 	// Analog 값을 통해 계산함. UART를 통해 STM에 데이터 송신해야함
-volatile uint16_t rain_sense = 0; 	// ADC를 통해 Analog 값 입력
+volatile int32_t encoder = 0;
+volatile uint16_t in_illum = 0;
+volatile uint16_t out_illum = 0;
+volatile uint8_t rain_state = 0;
 
 // UART Receive Data
 volatile uint16_t film_opacity = 0; 	// UART를 통해 Main STM으로부터 데이터를 수신해야함
-volatile uint16_t Sunroof_Motor = 0;  	// UART를 통해 Main STM으로부터 데이터를 수신해야함
+volatile uint8_t roof_state = STOP;
+volatile uint32_t Sunroof_Motor = 0;  	// UART를 통해 Main STM으로부터 데이터를 수신해야함
+volatile uint8_t Sunroof_Dir = 1;  	// UART를 통해 Main STM으로부터 데이터를 수신해야함
 
 // Sensor Read Flag
-uint8_t illum_read = 0;
-uint8_t rain_read = 0;
+uint8_t illum = 0;
+uint8_t rain = 0;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
-uint16_t HW_AdcReadChannel( uint32_t Channel );
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// 1 Second Timer
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	static uint8_t timer_count = 0;
@@ -79,12 +90,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	if(htim->Instance == TIM7)
 	{
 		timer_count++;
-		illum_read = 1;
+		illum = 1;
 
 		//rain_read = 1;
 		if(timer_count == 10)
 		{
-			rain_read = 1;
+			rain = 1;
 			timer_count = 0;
 		}
 	}
@@ -123,37 +134,59 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC_Init();
   MX_TIM7_Init();
-  /* USER CODE BEGIN 2 */
+  MX_TIM2_Init();
 
+  /* Initialize interrupts */
+  MX_NVIC_Init();
+  /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim7);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+
+  // Initialize Motor
+  Sunroof_Set(STOP);
+  encoder = 0;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(illum_read)
+	  if(illum)
 	  {
-		   in_illum = HW_AdcReadChannel(ADC_CHANNEL_1);
-		   out_illum = HW_AdcReadChannel(ADC_CHANNEL_0);
-
-		   illum_read = 0;
+		  read_illum();
+		  film_opacity = (in_illum < (out_illum - 50));
+		  illum = 0;
 	  }
-
-	  if(rain_read)
+	  if(rain)
 	  {
-		  rain_sense = HW_AdcReadChannel(ADC_CHANNEL_15);
-		  rain_read = 0;
-
-		  // 비가 오는지 여부를 Threshold 기준으로 정의
-		  rain_state = (rain_sense > RAIN_TH);
+		  read_rain();
+		  rain = 0;
 	  }
 
 	  // 내부 조도가 밖의 조도보다 낮으면 켜짐
-	  HAL_GPIO_WritePin(OPACITY_GPIO_Port, OPACITY_Pin, (in_illum < (out_illum - 50)));
+	  HAL_GPIO_WritePin(OPACITY_GPIO_Port, OPACITY_Pin, film_opacity);
 
 	  // 비 감지 시 켜짐
 	  HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, rain_state);
+
+	  // 모터 제어
+//	  roof_state = OPEN;
+//	  Sunroof_Set(roof_state);
+//	  HAL_Delay(1000);
+//
+//	  roof_state = STOP;
+//	  Sunroof_Set(roof_state);
+//	  HAL_Delay(1000);
+//
+//	  roof_state = CLOSE;
+//	  Sunroof_Set(roof_state);
+//	  HAL_Delay(1000);
+//
+//	  roof_state = STOP;
+//	  Sunroof_Set(roof_state);
+//	  HAL_Delay(1000);
+
 
     /* USER CODE END WHILE */
 
@@ -208,46 +241,22 @@ void SystemClock_Config(void)
   }
 }
 
-/* USER CODE BEGIN 4 */
-uint16_t HW_AdcReadChannel( uint32_t Channel )
+/**
+  * @brief NVIC Configuration.
+  * @retval None
+  */
+static void MX_NVIC_Init(void)
 {
-
-  ADC_ChannelConfTypeDef adcConf;
-  uint16_t adcData = 0;
-
-	/* wait the the Vrefint used by adc is set */
-	while (__HAL_PWR_GET_FLAG(PWR_FLAG_VREFINTRDY) == RESET) {};
-
-	__HAL_RCC_ADC1_CLK_ENABLE();
-
-	/*calibrate ADC if any calibraiton hardware*/
-	HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED );
-
-	/* Deselects all channels*/
-	adcConf.Channel = ADC_CHANNEL_MASK;
-	adcConf.Rank = ADC_RANK_NONE;
-	HAL_ADC_ConfigChannel( &hadc, &adcConf);
-
-	/* configure adc channel */
-	adcConf.Channel = Channel;
-	adcConf.Rank = ADC_RANK_CHANNEL_NUMBER;
-	HAL_ADC_ConfigChannel( &hadc, &adcConf);
-
-	/* Start the conversion process */
-	HAL_ADC_Start( &hadc);
-
-	/* Wait for the end of conversion */
-	HAL_ADC_PollForConversion( &hadc, HAL_MAX_DELAY );
-
-	/* Get the converted value of regular channel */
-	adcData = HAL_ADC_GetValue ( &hadc);
-
-	__HAL_ADC_DISABLE( &hadc) ;
-
-	__HAL_RCC_ADC1_CLK_DISABLE();
-
-  return adcData;
+  /* EXTI0_1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(EXTI0_1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
+  /* TIM7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(TIM7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(TIM7_IRQn);
 }
+
+/* USER CODE BEGIN 4 */
+
 /* USER CODE END 4 */
 
 /**

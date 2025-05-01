@@ -2,6 +2,8 @@
 "./Core/Src/adc.o"
 "./Core/Src/gpio.o"
 "./Core/Src/main.o"
+"./Core/Src/roof.o"
+"./Core/Src/sensor.o"
 "./Core/Src/stm32l0xx_hal_msp.o"
 "./Core/Src/stm32l0xx_it.o"
 "./Core/Src/syscalls.o"
