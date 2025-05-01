@@ -21,6 +21,19 @@ typedef struct
     int                average_count;
 } MQ135_HandleTypeDef;
 
+typedef struct
+{
+    double benzene_ppm_in;
+    double co_ppm_in;
+    double co2_ppm_in;
+    double smoke_ppm_in;
+
+    double benzene_ppm_out;
+    double co_ppm_out;
+    double co2_ppm_out;
+    double smoke_ppm_out;
+} mq135_data;
+
 void   MQ135_Init(MQ135_HandleTypeDef *hmq,
                   ADC_HandleTypeDef   *hadc,
                   uint32_t             channel,

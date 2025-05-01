@@ -1,19 +1,7 @@
+#include "mq135.h"
 
 MQ135_HandleTypeDef hmq_in;
 MQ135_HandleTypeDef hmq_out;
-
-typedef struct
-{
-    double benzene_ppm_in;
-    double co_ppm_in;
-    double co2_ppm_in;
-    double smoke_ppm_in;
-
-    double benzene_ppm_out;
-    double co_ppm_out;
-    double co2_ppm_out;
-    double smoke_ppm_out;
-} mq135_data;
 
 mq135_data mq135;
 
