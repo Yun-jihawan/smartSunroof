@@ -17,6 +17,7 @@
  #define AIR_GOOD_THRESHOLD 		 0.8f    // 양호 기준
  
 
+
  // 정규화 함수
  float Normalize(float value, float threshold);
  
