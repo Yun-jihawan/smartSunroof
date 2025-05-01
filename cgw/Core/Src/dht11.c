@@ -1,6 +1,7 @@
 #include "dht11.h"
 
 #include "cmsis_os.h"
+#include "debug.h"
 #include "main.h"
 #include "tim.h"
 
@@ -24,14 +25,25 @@ void StartDhtReaderTask(void *argument)
 
     DHT11_Init(&internal, DHT11_INTERNAL_GPIO_Port, DHT11_INTERNAL_Pin);
     DHT11_Init(&external, DHT11_EXTERNAL_GPIO_Port, DHT11_EXTERNAL_Pin);
+
     for (;;)
     {
         DHT11_Read_Data(&internal);
         DHT11_Read_Data(&external);
+
         dht->internal_rh   = internal.Rh_byte1;
         dht->internal_temp = internal.Temp_byte1;
         dht->external_rh   = external.Rh_byte1;
         dht->external_temp = external.Temp_byte1;
+
+#if (DEBUG > 0)
+        printf("\r\n=== DHT Sensor ===\r\n");
+        printf("내부[습도:%d%%, 온도:%d°C], 외부[습도:%d%%, 온도:%d°C]\r\n",
+               dht->internal_rh,
+               dht->internal_temp,
+               dht->external_rh,
+               dht->external_temp);
+#endif
         osDelay(2000);
     }
 }
@@ -87,6 +99,9 @@ static uint8_t DHT11_Check_Response(GPIO_TypeDef *port, uint16_t pin)
     while ((HAL_GPIO_ReadPin(port, pin)))
         ; // wait for the pin to go low
 
+#if (DEBUG > 0)
+    printf("DHT11 응답: %d\r\n", Response);
+#endif
     return Response;
 }
 
@@ -117,11 +132,31 @@ static void DHT11_Read_Data(dht11_sensor_t *sensor)
 
     DHT11_Start(port, pin);
     DHT11_Check_Response(port, pin);
+
     sensor->Rh_byte1   = DHT11_Read(port, pin);
     sensor->Rh_byte2   = DHT11_Read(port, pin);
     sensor->Temp_byte1 = DHT11_Read(port, pin);
     sensor->Temp_byte2 = DHT11_Read(port, pin);
     sensor->SUM        = DHT11_Read(port, pin);
+
+#if (DEBUG > 0)
+    uint8_t sum = sensor->Rh_byte1 + sensor->Rh_byte2 + sensor->Temp_byte1
+                  + sensor->Temp_byte2;
+    if (sum != sensor->SUM)
+    {
+        printf("DHT11 체크섬 오류: 계산된 합=%d, 수신된 체크섬=%d\r\n",
+               sum,
+               sensor->SUM);
+    }
+    else
+    {
+        printf("DHT11 데이터 읽기 성공 - 습도: %d.%d%%, 온도: %d.%d°C\r\n",
+               sensor->Rh_byte1,
+               sensor->Rh_byte2,
+               sensor->Temp_byte1,
+               sensor->Temp_byte2);
+    }
+#endif
 }
 
 static void DHT11_Init(dht11_sensor_t *sensor, GPIO_TypeDef *port, uint16_t pin)
