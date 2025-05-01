@@ -47,6 +47,13 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for aqReaderTask */
 osThreadId_t aqReaderTaskHandle;
 const osThreadAttr_t aqReaderTask_attributes = {
@@ -59,14 +66,14 @@ osThreadId_t pmReaderTaskHandle;
 const osThreadAttr_t pmReaderTask_attributes = {
   .name = "pmReaderTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for dhtReaderTask */
 osThreadId_t dhtReaderTaskHandle;
 const osThreadAttr_t dhtReaderTask_attributes = {
   .name = "dhtReaderTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -74,9 +81,10 @@ const osThreadAttr_t dhtReaderTask_attributes = {
 
 /* USER CODE END FunctionPrototypes */
 
-void StartAqReaderTask(void *argument);
-void StartPmReaderTask(void *argument);
-void StartDhtReaderTask(void *argument);
+void StartDefaultTask(void *argument);
+extern void StartAqReaderTask(void *argument);
+extern void StartPmReaderTask(void *argument);
+extern void StartDhtReaderTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -134,14 +142,17 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
   /* creation of aqReaderTask */
-  aqReaderTaskHandle = osThreadNew(StartAqReaderTask, NULL, &aqReaderTask_attributes);
+  aqReaderTaskHandle = osThreadNew(StartAqReaderTask, (void *)&aq, &aqReaderTask_attributes);
 
   /* creation of pmReaderTask */
-  pmReaderTaskHandle = osThreadNew(StartPmReaderTask, NULL, &pmReaderTask_attributes);
+  pmReaderTaskHandle = osThreadNew(StartPmReaderTask, (void *)&pm, &pmReaderTask_attributes);
 
   /* creation of dhtReaderTask */
-  dhtReaderTaskHandle = osThreadNew(StartDhtReaderTask, NULL, &dhtReaderTask_attributes);
+  dhtReaderTaskHandle = osThreadNew(StartDhtReaderTask, (void *)&dht, &dhtReaderTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -153,58 +164,22 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_StartAqReaderTask */
+/* USER CODE BEGIN Header_StartDefaultTask */
 /**
-  * @brief  Function implementing the aqReaderTask thread.
+  * @brief  Function implementing the defaultTask thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartAqReaderTask */
-void StartAqReaderTask(void *argument)
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void *argument)
 {
-  /* USER CODE BEGIN StartAqReaderTask */
+  /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END StartAqReaderTask */
-}
-
-/* USER CODE BEGIN Header_StartPmReaderTask */
-/**
-* @brief Function implementing the pmReaderTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartPmReaderTask */
-void StartPmReaderTask(void *argument)
-{
-  /* USER CODE BEGIN StartPmReaderTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartPmReaderTask */
-}
-
-/* USER CODE BEGIN Header_StartDhtReaderTask */
-/**
-* @brief Function implementing the dhtReaderTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartDhtReaderTask */
-void StartDhtReaderTask(void *argument)
-{
-  /* USER CODE BEGIN StartDhtReaderTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartDhtReaderTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
