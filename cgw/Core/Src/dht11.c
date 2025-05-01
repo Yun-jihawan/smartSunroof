@@ -1,6 +1,6 @@
 #include "dht11.h"
 
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include "debug.h"
 #include "main.h"
 #include "tim.h"
