@@ -1,10 +1,8 @@
 #include "mq135.h"
 
-mq135_data mq135;
-
 void StartAqReaderTask(void *argument)
 {
-    mq135_data *mq135 = (mq135_data *)argument;
+    mq135_data_t       *mq135 = (mq135_data_t *)argument;
     MQ135_HandleTypeDef hmq_in;
     MQ135_HandleTypeDef hmq_out;
 

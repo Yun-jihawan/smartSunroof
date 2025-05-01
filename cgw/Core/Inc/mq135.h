@@ -32,7 +32,7 @@ typedef struct
     double co_ppm_out;
     double co2_ppm_out;
     double smoke_ppm_out;
-} mq135_data;
+} mq135_data_t;
 
 void   MQ135_Init(MQ135_HandleTypeDef *hmq,
                   ADC_HandleTypeDef   *hadc,
