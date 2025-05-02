@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -41,8 +42,9 @@
 #define RAIN_PERIOD 10
 
 #define CLOSE 0
-#define OPEN 1
-#define STOP 2
+#define TILTING 1
+#define OPEN 2
+#define STOP 3
 
 #define AUTO_MODE 0
 #define USER_MODE 1
@@ -56,7 +58,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-volatile uint8_t Control_Mode = AUTO_MODE;
 
 // Sensor Data & UART Send Data
 volatile int32_t encoder = 0;
@@ -68,15 +69,13 @@ volatile uint8_t rain_state = 0;
 // UART Receive Data
 volatile uint16_t film_opacity = 0; 	// UART를 통해 Main STM으로부터 데이터를 수신해야함
 volatile uint8_t roof_state = STOP;
-volatile uint32_t Sunroof_Motor = 0;  	// UART를 통해 Main STM으로부터 데이터를 수신해야함
-volatile uint8_t Sunroof_Dir = 1;  	// UART를 통해 Main STM으로부터 데이터를 수신해야함
 
 // UART Variables
 uint8_t tx_buf[4];
 uint32_t tx_payload;
 
-uint8_t rx_buf[4];
-uint32_t rx_payload;
+uint8_t rx_buf[2];
+uint16_t rx_payload;
 
 uint8_t receive_data = 0;
 
@@ -98,7 +97,6 @@ void Send_Sensor_Data(void);
 // 1 Second Timer
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	static uint8_t m = OPEN;
 	if(htim->Instance == TIM7)
 	{
 		sensor_read = 1;
@@ -110,17 +108,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART2) {
     	rx_payload = 0;
-    	rx_payload |= ((uint32_t)rx_buf[0] << 24);
-    	rx_payload |= ((uint32_t)rx_buf[1] << 16);
-    	rx_payload |= ((uint32_t)rx_buf[2] << 8);
-    	rx_payload |= ((uint32_t)rx_buf[3]);
+    	rx_payload |= ((uint16_t)rx_buf[0] << 8);
+    	rx_payload |= ((uint16_t)rx_buf[1]);
 
-	    Control_Mode = ((rx_payload >> 24) & 0x01);
-		film_opacity = ((rx_payload >> 16) & 0x01);
 		roof_state = ((rx_payload >> 8) & 0x03);
+		film_opacity = ((rx_payload) & 0x01);
+
+		printf("Roof : %d, Opacity: %d\r\n", roof_state, film_opacity);
 
         // 다시 수신 시작 (반복 수신)
-        HAL_UART_Receive_IT(&huart2, rx_buf, 4);
+        HAL_UART_Receive_DMA(&huart2, rx_buf, 2);
     }
 }
 /* USER CODE END 0 */
@@ -154,6 +151,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_ADC_Init();
   MX_TIM7_Init();
@@ -164,7 +162,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim7);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-  HAL_UART_Receive_IT(&huart2, rx_buf, 4);
+  HAL_UART_Receive_DMA(&huart2, rx_buf, 2);
 
   // Initialize
   encoder = 0;
@@ -185,17 +183,18 @@ int main(void)
 		  sensor_read = 0;
 
 		  //UART Send
-		  tx_payload = 0;
-		  tx_payload |= ((uint32_t)in_illum & 0x0FFF) << 20;  // In Illum : 12 -> 32 - 12 = 20
-		  tx_payload |= ((uint32_t)out_illum & 0x0FFF) << 8;   // Out Illum : 12 -> 20 - 12 = 8
-		  tx_payload |= (rain_state & 0x01) << 7;               // rain_flag : 1 0 -> 8 - 1 = 7
+		  tx_payload = 0x41424344;
+		  //tx_payload = 0;
+		  //tx_payload |= ((uint32_t)in_illum & 0x0FFF) << 20;  // In Illum : 12 -> 32 - 12 = 20
+		  //tx_payload |= ((uint32_t)out_illum & 0x0FFF) << 8;   // Out Illum : 12 -> 20 - 12 = 8
+		  //tx_payload |= (rain_state & 0x01) << 7;               // rain_flag : 1 0 -> 8 - 1 = 7
 
 		  Send_Sensor_Data();
 	  }
 
 	  Sunroof_Set(roof_state);
 
-	  HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, Control_Mode);
+	  HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, rain_state);
 	  HAL_GPIO_WritePin(OPACITY_GPIO_Port, OPACITY_Pin, film_opacity);
 
     /* USER CODE END WHILE */

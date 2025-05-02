@@ -16,14 +16,18 @@
 #include "gpio.h"
 
 #define MOVE_SPEED 70
-#define OPEN 1
 #define CLOSE 0
-#define STOP 2
+#define TILTING 1
+#define OPEN 2
+#define STOP 3
 
 #define CW 1
 #define ACW 0
 
-#define ROOF_MAX 5000
+#define ROOF_OPEN_MAX 6000
+#define ROOF_TILTING_MAX 3000
+#define ROOF_CLOSE 0
+#define Margin 300
 
 
 extern volatile int32_t encoder;
