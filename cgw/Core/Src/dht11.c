@@ -36,7 +36,7 @@ void StartDhtReaderTask(void *argument)
         dht->external_rh   = external.Rh_byte1;
         dht->external_temp = external.Temp_byte1;
 
-#if (DEBUG > 0)
+#if (DEBUG_LEVEL > 0)
         printf("\r\n=== DHT Sensor ===\r\n");
         printf("내부[습도:%d%%, 온도:%d°C], 외부[습도:%d%%, 온도:%d°C]\r\n",
                dht->internal_rh,
@@ -99,7 +99,7 @@ static uint8_t DHT11_Check_Response(GPIO_TypeDef *port, uint16_t pin)
     while ((HAL_GPIO_ReadPin(port, pin)))
         ; // wait for the pin to go low
 
-#if (DEBUG > 0)
+#if (DEBUG_LEVEL > 0)
     printf("DHT11 응답: %d\r\n", Response);
 #endif
     return Response;
@@ -139,7 +139,7 @@ static void DHT11_Read_Data(dht11_sensor_t *sensor)
     sensor->Temp_byte2 = DHT11_Read(port, pin);
     sensor->SUM        = DHT11_Read(port, pin);
 
-#if (DEBUG > 0)
+#if (DEBUG_LEVEL > 0)
     uint8_t sum = sensor->Rh_byte1 + sensor->Rh_byte2 + sensor->Temp_byte1
                   + sensor->Temp_byte2;
     if (sum != sensor->SUM)

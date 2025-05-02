@@ -1,11 +1,11 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
-#ifndef DEBUG
-#define DEBUG 0
+#ifndef DEBUG_LEVEL
+#define DEBUG_LEVEL 0
 #endif
 
-#if (DEBUG > 0)
+#if (DEBUG_LEVEL > 0)
 #include <stdio.h>
 #endif
 

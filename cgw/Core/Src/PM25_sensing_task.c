@@ -15,7 +15,7 @@ void StartPmReaderTask(void *argument)
         sharp_dust_sensor_scan(&dust_sensor);
         *pm = sharp_dust_sensor_get_concentration(&dust_sensor);
 
-#if (DEBUG > 0)
+#if (DEBUG_LEVEL > 0)
         // 농도 출력
         printf("\r\n=== PM2.5 Sensor ===\r\n");
         printf("Dust concentration: %.2f ugram/m^3\r\n",
