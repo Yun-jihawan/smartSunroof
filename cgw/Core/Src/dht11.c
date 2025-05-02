@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-static void    delay(uint16_t time);
+static void    delay_us(uint16_t time);
 static void    Set_Pin_Output(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
 static void    Set_Pin_Input(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
 static void    DHT11_Start(GPIO_TypeDef *port, uint16_t pin);
@@ -48,11 +48,10 @@ void StartDhtReaderTask(void *argument)
     }
 }
 
-static void delay(uint16_t time)
+static void delay_us(uint16_t us)
 {
-    /* change your code here for the delay in microseconds */
     __HAL_TIM_SET_COUNTER(&htim6, 0);
-    while ((__HAL_TIM_GET_COUNTER(&htim6)) < time)
+    while ((__HAL_TIM_GET_COUNTER(&htim6)) < us)
         ;
 }
 
@@ -78,19 +77,19 @@ static void DHT11_Start(GPIO_TypeDef *port, uint16_t pin)
 {
     Set_Pin_Output(port, pin);       // set the pin as output
     HAL_GPIO_WritePin(port, pin, 0); // pull the pin low
-    delay(18000);                    // wait for 18ms
+    delay_us(18000);                 // wait for 18ms
     HAL_GPIO_WritePin(port, pin, 1); // pull the pin high
-    delay(20);                       // wait for 20us
+    delay_us(20);                    // wait for 20us
     Set_Pin_Input(port, pin);        // set as input
 }
 
 static uint8_t DHT11_Check_Response(GPIO_TypeDef *port, uint16_t pin)
 {
     uint8_t Response = 0;
-    delay(40);
+    delay_us(40);
     if (!(HAL_GPIO_ReadPin(port, pin)))
     {
-        delay(80);
+        delay_us(80);
         if ((HAL_GPIO_ReadPin(port, pin)))
             Response = 1;
         else
@@ -112,7 +111,7 @@ static uint8_t DHT11_Read(GPIO_TypeDef *port, uint16_t pin)
     {
         while (!(HAL_GPIO_ReadPin(port, pin)))
             ;                               // wait for the pin to go high
-        delay(40);                          // wait for 40 us
+        delay_us(40);                       // wait for 40 us
         if (!(HAL_GPIO_ReadPin(port, pin))) // if the pin is low
         {
             i &= ~(1 << (7 - j)); // write 0
