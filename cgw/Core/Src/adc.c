@@ -83,14 +83,6 @@ void MX_ADC_Init(void)
 
   /** Configure for the selected ADC regular channel to be converted.
   */
-  sConfig.Channel = ADC_CHANNEL_2;
-  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure for the selected ADC regular channel to be converted.
-  */
   sConfig.Channel = ADC_CHANNEL_4;
   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
   {
@@ -118,10 +110,9 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     /**ADC GPIO Configuration
     PA0     ------> ADC_IN0
     PA1     ------> ADC_IN1
-    PA2     ------> ADC_IN2
     PA4     ------> ADC_IN4
     */
-    GPIO_InitStruct.Pin = AQ_INTERNAL_Pin|AQ_EXTERNAL_Pin|PM2_5_Pin|DHT11_EXTERNAL_Pin;
+    GPIO_InitStruct.Pin = AQ_INTERNAL_Pin|AQ_EXTERNAL_Pin|PM2_5_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -146,10 +137,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     /**ADC GPIO Configuration
     PA0     ------> ADC_IN0
     PA1     ------> ADC_IN1
-    PA2     ------> ADC_IN2
     PA4     ------> ADC_IN4
     */
-    HAL_GPIO_DeInit(GPIOA, AQ_INTERNAL_Pin|AQ_EXTERNAL_Pin|PM2_5_Pin|DHT11_EXTERNAL_Pin);
+    HAL_GPIO_DeInit(GPIOA, AQ_INTERNAL_Pin|AQ_EXTERNAL_Pin|PM2_5_Pin);
 
   /* USER CODE BEGIN ADC1_MspDeInit 1 */
 
