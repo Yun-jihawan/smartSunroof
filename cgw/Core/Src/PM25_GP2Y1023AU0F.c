@@ -1,5 +1,14 @@
 #include "PM25_GP2Y1023AU0F.h"
 
+uint32_t micros(void)
+{
+    /*
+     * TIM2
+     * prescalar = 0, period = 65535
+     */
+    return __HAL_TIM_GET_COUNTER(&htim2);
+}
+
 // 초기화 함수: 센서의 핀과 포트를 설정합니다.
 void sharp_dust_sensor_init(sharp_dust_sensor_t *sensor,
                             GPIO_TypeDef        *port,
@@ -67,6 +76,7 @@ void sharp_dust_sensor_scan(sharp_dust_sensor_t *sensor)
     float dust = (AD_value * 1.10f - 1000.0f) * 0.075f * 6.200f;
     if (dust > 100.0f)
         dust /= 10.0f;
+    dust /= 10.0f;
 
     sensor->concentration = dust;
 }
