@@ -25,6 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
+#include <stdio.h>
 #include "sensor.h"
 #include "roof.h"
 /* USER CODE END Includes */
@@ -38,11 +40,12 @@
 /* USER CODE BEGIN PD */
 #define RAIN_PERIOD 10
 
-#define OPEN 1
 #define CLOSE 0
+#define OPEN 1
 #define STOP 2
 
-#define ROOF_MAX 1000
+#define AUTO_MODE 0
+#define USER_MODE 1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -53,11 +56,13 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+volatile uint8_t Control_Mode = AUTO_MODE;
 
 // Sensor Data & UART Send Data
 volatile int32_t encoder = 0;
 volatile uint16_t in_illum = 0;
 volatile uint16_t out_illum = 0;
+volatile uint16_t rain_sense;
 volatile uint8_t rain_state = 0;
 
 // UART Receive Data
@@ -66,9 +71,17 @@ volatile uint8_t roof_state = STOP;
 volatile uint32_t Sunroof_Motor = 0;  	// UART를 통해 Main STM으로부터 데이터를 수신해야함
 volatile uint8_t Sunroof_Dir = 1;  	// UART를 통해 Main STM으로부터 데이터를 수신해야함
 
+// UART Variables
+uint8_t tx_buf[4];
+uint32_t tx_payload;
+
+uint8_t rx_buf[4];
+uint32_t rx_payload;
+
+uint8_t receive_data = 0;
+
 // Sensor Read Flag
-uint8_t illum = 0;
-uint8_t rain = 0;
+uint8_t sensor_read = 0;
 
 /* USER CODE END PV */
 
@@ -76,7 +89,7 @@ uint8_t rain = 0;
 void SystemClock_Config(void);
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
-
+void Send_Sensor_Data(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -85,20 +98,42 @@ static void MX_NVIC_Init(void);
 // 1 Second Timer
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	static uint8_t timer_count = 0;
-
+	static uint8_t m = OPEN;
 	if(htim->Instance == TIM7)
 	{
-		timer_count++;
-		illum = 1;
+		// DEBUG
+		m = 1 - m;
+		if(Control_Mode == AUTO_MODE) roof_state = m;
 
-		//rain_read = 1;
-		if(timer_count == 10)
-		{
-			rain = 1;
-			timer_count = 0;
-		}
+		sensor_read = 1;
 	}
+}
+
+// UART RX
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2) {
+    	rx_payload = 0;
+    	rx_payload |= ((uint32_t)rx_buf[0] << 24);
+    	rx_payload |= ((uint32_t)rx_buf[1] << 16);
+    	rx_payload |= ((uint32_t)rx_buf[2] << 8);
+    	rx_payload |= ((uint32_t)rx_buf[3]);
+
+    	//rx_payload = 0x01010303;
+
+		//Control_Mode = (rx_payload >> 31) & 0x1;
+		//film_opacity = (rx_payload >> 30) & 0x1;
+		//roof_state = (rx_payload >> 28) & 0x3;
+
+	    //DEBUG
+	    Control_Mode = ((rx_payload >> 24) & 0x01);
+	    if(Control_Mode == USER_MODE) {
+	    	film_opacity = ((rx_payload >> 16) & 0x01);
+	    	roof_state = ((rx_payload >> 8) & 0x03);
+	    }
+        // 다시 수신 시작 (반복 수신)
+        HAL_UART_Receive_IT(&huart2, rx_buf, 4);
+    }
 }
 /* USER CODE END 0 */
 
@@ -141,52 +176,51 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim7);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+  HAL_UART_Receive_IT(&huart2, rx_buf, 4);
 
-  // Initialize Motor
-  Sunroof_Set(STOP);
+  // Initialize
+  Control_Mode = AUTO_MODE;
   encoder = 0;
 
+  roof_state = STOP;
+  Sunroof_Set(STOP);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(illum)
+	  if(sensor_read)
 	  {
 		  read_illum();
-		  film_opacity = (in_illum < (out_illum - 50));
-		  illum = 0;
-	  }
-	  if(rain)
-	  {
 		  read_rain();
-		  rain = 0;
+
+		  sensor_read = 0;
+
+		  //UART Send
+		  tx_payload = 0;
+		  tx_payload |= ((uint32_t)in_illum & 0x0FFF) << 20;  // In Illum : 12 -> 32 - 12 = 20
+		  tx_payload |= ((uint32_t)out_illum & 0x0FFF) << 8;   // Out Illum : 12 -> 20 - 12 = 8
+		  tx_payload |= (rain_state & 0x01) << 7;               // rain_flag : 1 0 -> 8 - 1 = 7
+
+		  Send_Sensor_Data();
 	  }
 
-	  // 내부 조도가 밖의 조도보다 낮으면 켜짐
+	  switch(Control_Mode) {
+	  case AUTO_MODE:
+		  film_opacity = (in_illum < (out_illum - 50));
+		  // 모터 제어
+		  Sunroof_Set(roof_state);
+		  break;
+
+	  case USER_MODE:
+	  default:
+		  Sunroof_Set(roof_state);
+		  break;
+	  }
+
+	  HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, Control_Mode);
 	  HAL_GPIO_WritePin(OPACITY_GPIO_Port, OPACITY_Pin, film_opacity);
-
-	  // 비 감지 시 켜짐
-	  HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, rain_state);
-
-	  // 모터 제어
-//	  roof_state = OPEN;
-//	  Sunroof_Set(roof_state);
-//	  HAL_Delay(1000);
-//
-//	  roof_state = STOP;
-//	  Sunroof_Set(roof_state);
-//	  HAL_Delay(1000);
-//
-//	  roof_state = CLOSE;
-//	  Sunroof_Set(roof_state);
-//	  HAL_Delay(1000);
-//
-//	  roof_state = STOP;
-//	  Sunroof_Set(roof_state);
-//	  HAL_Delay(1000);
-
 
     /* USER CODE END WHILE */
 
@@ -256,7 +290,14 @@ static void MX_NVIC_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void Send_Sensor_Data(void) {
+	tx_buf[0] = (tx_payload >> 24) & 0xFF;
+	tx_buf[1] = (tx_payload >> 16) & 0xFF;
+	tx_buf[2] = (tx_payload >> 8) & 0xFF;
+	tx_buf[3] = tx_payload & 0xFF;
 
+	HAL_UART_Transmit(&huart2, tx_buf, 4, 100);
+}
 /* USER CODE END 4 */
 
 /**

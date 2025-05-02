@@ -20,6 +20,7 @@
 
 extern volatile uint16_t in_illum;
 extern volatile uint16_t out_illum;
+extern volatile uint16_t rain_sense;
 extern volatile uint8_t rain_state;
 
 void read_illum(void);

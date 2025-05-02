@@ -7,7 +7,7 @@
 
 
 ### 작업 완료
-2. 조도 센서 값 수신 (timer 1s)
+2. 조도 센서 값 수신 (timer 10s)
     * Analog Read Inside : PA1 / Outside : PA0
     
     조사 결과 10k ohm 저항 사용하는것이 적절한(?) 값이라고 하나, 현재 1K만 있어서 사용중임임
