@@ -101,10 +101,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	static uint8_t m = OPEN;
 	if(htim->Instance == TIM7)
 	{
-		// DEBUG
-		m = 1 - m;
-		if(Control_Mode == AUTO_MODE) roof_state = m;
-
 		sensor_read = 1;
 	}
 }
@@ -119,18 +115,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     	rx_payload |= ((uint32_t)rx_buf[2] << 8);
     	rx_payload |= ((uint32_t)rx_buf[3]);
 
-    	//rx_payload = 0x01010303;
-
-		//Control_Mode = (rx_payload >> 31) & 0x1;
-		//film_opacity = (rx_payload >> 30) & 0x1;
-		//roof_state = (rx_payload >> 28) & 0x3;
-
-	    //DEBUG
 	    Control_Mode = ((rx_payload >> 24) & 0x01);
-	    if(Control_Mode == USER_MODE) {
-	    	film_opacity = ((rx_payload >> 16) & 0x01);
-	    	roof_state = ((rx_payload >> 8) & 0x03);
-	    }
+		film_opacity = ((rx_payload >> 16) & 0x01);
+		roof_state = ((rx_payload >> 8) & 0x03);
+
         // 다시 수신 시작 (반복 수신)
         HAL_UART_Receive_IT(&huart2, rx_buf, 4);
     }
@@ -179,9 +167,7 @@ int main(void)
   HAL_UART_Receive_IT(&huart2, rx_buf, 4);
 
   // Initialize
-  Control_Mode = AUTO_MODE;
   encoder = 0;
-
   roof_state = STOP;
   Sunroof_Set(STOP);
   /* USER CODE END 2 */
@@ -190,6 +176,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  // 센서 값 수신 및 UART 송신
 	  if(sensor_read)
 	  {
 		  read_illum();
@@ -206,18 +193,7 @@ int main(void)
 		  Send_Sensor_Data();
 	  }
 
-	  switch(Control_Mode) {
-	  case AUTO_MODE:
-		  film_opacity = (in_illum < (out_illum - 50));
-		  // 모터 제어
-		  Sunroof_Set(roof_state);
-		  break;
-
-	  case USER_MODE:
-	  default:
-		  Sunroof_Set(roof_state);
-		  break;
-	  }
+	  Sunroof_Set(roof_state);
 
 	  HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, Control_Mode);
 	  HAL_GPIO_WritePin(OPACITY_GPIO_Port, OPACITY_Pin, film_opacity);
