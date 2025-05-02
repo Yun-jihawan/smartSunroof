@@ -1,3 +1,4 @@
+#include "adc.h"
 #include "cmsis_os2.h"
 #include "debug.h"
 #include "mq135.h"
@@ -8,6 +9,24 @@ void StartAqReaderTask(void *argument)
     MQ135_HandleTypeDef hmq_in;
     MQ135_HandleTypeDef hmq_out;
 
+    MQ135_Init(&hmq_in,
+               &hadc,
+               ADC_CHANNEL_0,
+               MQ135_DEFAULT_AVERAGE,
+               MQ135_DEFAULT_ADC_BITS,
+               MQ135_DEFAULT_VREF);
+    MQ135_SetRL(&hmq_in, 10.0f); // 로드 저항 값 설정 (보통 10k옴)
+    MQ135_SetR0(&hmq_in, 9.83f); // 깨끗한 공기에서의 초기 R0 값 (직접 보정해서
+                                 // 측정하는 게 가장 정확)
+    MQ135_Init(&hmq_out,
+               &hadc,
+               ADC_CHANNEL_1,
+               MQ135_DEFAULT_AVERAGE,
+               MQ135_DEFAULT_ADC_BITS,
+               MQ135_DEFAULT_VREF);
+    MQ135_SetRL(&hmq_out, 10.0f); // 로드 저항 값 설정 (보통 10k옴)
+    MQ135_SetR0(&hmq_out, 9.83f); // 깨끗한 공기에서의 초기 R0 값 (직접 보정해서
+                                  // 측정하는 게 가장 정확)
     for (;;)
     {
         mq135->benzene_ppm_in = MQ135_GetPPM(&hmq_in) / 10.000;
