@@ -116,30 +116,31 @@ static void DHT11_Init(dht11_sensor_t *sensor, GPIO_TypeDef *port, uint16_t pin)
     sensor->pin  = pin;
 }
 
-void DHT_Init(dht11_sensor_t *internal, dht11_sensor_t *external)
+void DHT_Init(dht11_sensor_t *sensors)
 {
-    DHT11_Init(internal, DHT11_INTERNAL_GPIO_Port, DHT11_INTERNAL_Pin);
-    DHT11_Init(external, DHT11_EXTERNAL_GPIO_Port, DHT11_EXTERNAL_Pin);
+    DHT11_Init(&sensors[0], DHT11_INTERNAL_GPIO_Port, DHT11_INTERNAL_Pin);
+    DHT11_Init(&sensors[1], DHT11_EXTERNAL_GPIO_Port, DHT11_EXTERNAL_Pin);
 }
 
-void DHT_Read(dht11_sensor_t *internal,
-              dht11_sensor_t *external,
-              dht11_data_t   *dht)
+void DHT_Read(dht11_sensor_t *sensors, dht11_data_t *data)
 {
+    dht11_sensor_t *internal = &sensors[0];
+    dht11_sensor_t *external = &sensors[1];
+
     DHT11_Read_Data(internal);
     DHT11_Read_Data(external);
 
-    dht->internal_rh   = internal->Rh_byte1;
-    dht->internal_temp = internal->Temp_byte1;
-    dht->external_rh   = external->Rh_byte1;
-    dht->external_temp = external->Temp_byte1;
+    data[0].rh   = internal->Rh_byte1;
+    data[0].temp = internal->Temp_byte1;
+    data[1].rh   = external->Rh_byte1;
+    data[1].temp = external->Temp_byte1;
 
 #if (DEBUG_LEVEL > 0)
     printf("\r\n=== DHT Sensor ===\r\n");
     printf("내부[습도:%d%%, 온도:%d°C], 외부[습도:%d%%, 온도:%d°C]\r\n",
-           dht->internal_rh,
-           dht->internal_temp,
-           dht->external_rh,
-           dht->external_temp);
+           data[0].rh,
+           data[0].temp,
+           data[1].rh,
+           data[1].temp);
 #endif
 }

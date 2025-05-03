@@ -137,8 +137,11 @@ static double MQ135_GetSmoke_PPM(mq135_sensor_t *hmq)
     return powf(10.0f, (aSmoke * log10f(ratio) + bSmoke));
 }
 
-void AQ_Init(mq135_sensor_t *hmq_in, mq135_sensor_t *hmq_out)
+void AQ_Init(mq135_sensor_t *sensors)
 {
+    mq135_sensor_t *hmq_in  = &sensors[0];
+    mq135_sensor_t *hmq_out = &sensors[1];
+
     MQ135_Init(hmq_in,
                &hadc,
                ADC_CHANNEL_0,
@@ -159,32 +162,33 @@ void AQ_Init(mq135_sensor_t *hmq_in, mq135_sensor_t *hmq_out)
                                  // 측정하는 게 가장 정확)
 }
 
-void AQ_Read(mq135_sensor_t *hmq_in,
-             mq135_sensor_t *hmq_out,
-             mq135_data_t   *mq135)
+void AQ_Read(mq135_sensor_t *sensors, mq135_data_t *data)
 {
-    mq135->benzene_ppm_in = MQ135_GetPPM(hmq_in) / 10.000;
-    mq135->co_ppm_in      = MQ135_GetCO_PPM(hmq_in) / 9.00;
-    mq135->co2_ppm_in     = MQ135_GetCO2_PPM(hmq_in) / 5.00;
-    mq135->smoke_ppm_in   = MQ135_GetSmoke_PPM(hmq_in) / 50.00;
+    mq135_sensor_t *hmq_in  = &sensors[0];
+    mq135_sensor_t *hmq_out = &sensors[1];
 
-    mq135->benzene_ppm_out = MQ135_GetPPM(hmq_out) / 10.000;
-    mq135->co_ppm_out      = MQ135_GetCO_PPM(hmq_out) / 9.00;
-    mq135->co2_ppm_out     = MQ135_GetCO2_PPM(hmq_out) / 5.00;
-    mq135->smoke_ppm_out   = MQ135_GetSmoke_PPM(hmq_out) / 50.00;
+    data[0].benzene_ppm = MQ135_GetPPM(hmq_in) / 10.000;
+    data[0].co_ppm      = MQ135_GetCO_PPM(hmq_in) / 9.00;
+    data[0].co2_ppm     = MQ135_GetCO2_PPM(hmq_in) / 5.00;
+    data[0].smoke_ppm   = MQ135_GetSmoke_PPM(hmq_in) / 50.00;
+
+    data[1].benzene_ppm = MQ135_GetPPM(hmq_out) / 10.000;
+    data[1].co_ppm      = MQ135_GetCO_PPM(hmq_out) / 9.00;
+    data[1].co2_ppm     = MQ135_GetCO2_PPM(hmq_out) / 5.00;
+    data[1].smoke_ppm   = MQ135_GetSmoke_PPM(hmq_out) / 50.00;
 
 #if (DEBUG_LEVEL > 0)
     // TeraTerm으로 uart통신해서 출력하기
     printf("\r\n=== AQ Indoor Sensor ===\r\n");
-    printf("Benzene : %.3f ppm \r\n", mq135->benzene_ppm_in);
-    printf("CO : %.2f ppm\r\n", mq135->co_ppm_in);
-    printf("CO2 : %.2f ppm\r\n", mq135->co2_ppm_in);
-    printf("Smoke : %.2f ppm\r\n", mq135->smoke_ppm_in);
+    printf("Benzene : %.3f ppm \r\n", data[0].benzene_ppm);
+    printf("CO : %.2f ppm\r\n", data[0].co_ppm);
+    printf("CO2 : %.2f ppm\r\n", data[0].co2_ppm);
+    printf("Smoke : %.2f ppm\r\n", data[0].smoke_ppm);
 
     printf("\r\n=== AQ Outdoor Sensor ===\r\n");
-    printf("Benzene : %.3f ppm \r\n", mq135->benzene_ppm_out);
-    printf("CO : %.2f ppm\r\n", mq135->co_ppm_out);
-    printf("CO2 : %.2f ppm\r\n", mq135->co2_ppm_out);
-    printf("Smoke : %.2f ppm\r\n", mq135->smoke_ppm_out);
+    printf("Benzene : %.3f ppm \r\n", data[1].benzene_ppm);
+    printf("CO : %.2f ppm\r\n", data[1].co_ppm);
+    printf("CO2 : %.2f ppm\r\n", data[1].co2_ppm);
+    printf("Smoke : %.2f ppm\r\n", data[1].smoke_ppm);
 #endif
 }

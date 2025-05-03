@@ -23,20 +23,13 @@ typedef struct
 
 typedef struct
 {
-    double benzene_ppm_in;
-    double co_ppm_in;
-    double co2_ppm_in;
-    double smoke_ppm_in;
-
-    double benzene_ppm_out;
-    double co_ppm_out;
-    double co2_ppm_out;
-    double smoke_ppm_out;
+    double benzene_ppm;
+    double co_ppm;
+    double co2_ppm;
+    double smoke_ppm;
 } mq135_data_t;
 
-void AQ_Init(mq135_sensor_t *hmq_in, mq135_sensor_t *hmq_out);
-void AQ_Read(mq135_sensor_t *hmq_in,
-             mq135_sensor_t *hmq_out,
-             mq135_data_t   *mq135);
+void AQ_Init(mq135_sensor_t *sensors);
+void AQ_Read(mq135_sensor_t *sensors, mq135_data_t *data);
 
 #endif

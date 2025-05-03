@@ -143,25 +143,23 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-  dht11_sensor_t      dht_internal;
-  dht11_sensor_t      dht_external;
-  mq135_sensor_t      hmq_in;
-  mq135_sensor_t      hmq_out;
+  dht11_sensor_t      dht_sensors[2];
+  mq135_sensor_t      aq_sensors[2];
   sharp_dust_sensor_t dust_sensor;
 
-  dht11_data_t dht;
-  mq135_data_t aq;
+  dht11_data_t dht[2];
+  mq135_data_t aq[2];
   float        pm;
 
-  DHT_Init(&dht_internal, &dht_external);
-  AQ_Init(&hmq_in, &hmq_out);
+  DHT_Init(dht_sensors);
+  AQ_Init(aq_sensors);
   PM_Init(&dust_sensor);
 
   /* Infinite loop */
   for(;;)
   {
-    DHT_Read(&dht_internal, &dht_external, &dht);
-    AQ_Read(&hmq_in, &hmq_out, &aq);
+    DHT_Read(dht_sensors, dht);
+    AQ_Read(aq_sensors, aq);
     PM_Read(&dust_sensor, &pm);
     osDelay(5000);
   }

@@ -16,15 +16,11 @@ typedef struct
 
 typedef struct
 {
-    uint8_t internal_rh;
-    uint8_t internal_temp;
-    uint8_t external_rh;
-    uint8_t external_temp;
+    uint8_t rh;
+    uint8_t temp;
 } dht11_data_t;
 
-void DHT_Init(dht11_sensor_t *internal, dht11_sensor_t *external);
-void DHT_Read(dht11_sensor_t *internal,
-              dht11_sensor_t *external,
-              dht11_data_t   *dht);
+void DHT_Init(dht11_sensor_t *sensors);
+void DHT_Read(dht11_sensor_t *sensors, dht11_data_t *data);
 
 #endif /* DHT11_H_ */
