@@ -19,7 +19,7 @@ typedef struct
     float              R0;
     float              RL;
     int                average_count;
-} MQ135_HandleTypeDef;
+} mq135_sensor_t;
 
 typedef struct
 {
@@ -34,9 +34,9 @@ typedef struct
     double smoke_ppm_out;
 } mq135_data_t;
 
-void AQ_Init(MQ135_HandleTypeDef *hmq_in, MQ135_HandleTypeDef *hmq_out);
-void AQ_Read(MQ135_HandleTypeDef *hmq_in,
-             MQ135_HandleTypeDef *hmq_out,
-             mq135_data_t        *mq135);
+void AQ_Init(mq135_sensor_t *hmq_in, mq135_sensor_t *hmq_out);
+void AQ_Read(mq135_sensor_t *hmq_in,
+             mq135_sensor_t *hmq_out,
+             mq135_data_t   *mq135);
 
 #endif

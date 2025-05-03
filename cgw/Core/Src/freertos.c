@@ -145,8 +145,8 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN StartDefaultTask */
   dht11_sensor_t      dht_internal;
   dht11_sensor_t      dht_external;
-  MQ135_HandleTypeDef hmq_in;
-  MQ135_HandleTypeDef hmq_out;
+  mq135_sensor_t      hmq_in;
+  mq135_sensor_t      hmq_out;
   sharp_dust_sensor_t dust_sensor;
 
   dht11_data_t dht;

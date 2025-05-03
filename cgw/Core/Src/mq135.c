@@ -22,7 +22,7 @@ static const float bCO2   = 3.75f;
 static const float aSmoke = -0.42f;
 static const float bSmoke = 2.90f;
 
-static float MQ135_ReadAverageADC(MQ135_HandleTypeDef *hmq)
+static float MQ135_ReadAverageADC(mq135_sensor_t *hmq)
 {
     if (hmq == NULL || hmq->hadc == NULL)
         return 0.0f;
@@ -49,7 +49,7 @@ static float MQ135_ReadAverageADC(MQ135_HandleTypeDef *hmq)
     return sum / hmq->average_count;
 }
 
-static float MQ135_GetResistance(MQ135_HandleTypeDef *hmq)
+static float MQ135_GetResistance(mq135_sensor_t *hmq)
 {
     float adc_avg = MQ135_ReadAverageADC(hmq);
     float voltage = (adc_avg / ((1 << hmq->adc_bits) - 1)) * hmq->vref;
@@ -63,12 +63,12 @@ static float MQ135_GetResistance(MQ135_HandleTypeDef *hmq)
 //     return aCor * t * t - bCor * t + cCor - (h - 33.0f) * dCor;
 // }
 
-static void MQ135_Init(MQ135_HandleTypeDef *hmq,
-                       ADC_HandleTypeDef   *hadc,
-                       uint32_t             channel,
-                       int                  average,
-                       uint8_t              bits,
-                       float                vref)
+static void MQ135_Init(mq135_sensor_t    *hmq,
+                       ADC_HandleTypeDef *hadc,
+                       uint32_t           channel,
+                       int                average,
+                       uint8_t            bits,
+                       float              vref)
 {
     if (hmq == NULL)
         return;
@@ -81,62 +81,63 @@ static void MQ135_Init(MQ135_HandleTypeDef *hmq,
     hmq->R0            = 1.0f;
 }
 
-static void MQ135_SetRL(MQ135_HandleTypeDef *hmq, float RL)
+static void MQ135_SetRL(mq135_sensor_t *hmq, float RL)
 {
     if (hmq)
         hmq->RL = RL;
 }
 
-static void MQ135_SetR0(MQ135_HandleTypeDef *hmq, float R0)
+static void MQ135_SetR0(mq135_sensor_t *hmq, float R0)
 {
     if (hmq)
         hmq->R0 = R0;
 }
 
-// static float MQ135_Calibrate(MQ135_HandleTypeDef *hmq, int cPPM)
+// static float MQ135_Calibrate(mq135_sensor_t *hmq, int cPPM)
 // {
 //     float RS = MQ135_GetResistance(hmq);
 //     hmq->R0  = RS * powf((float)cPPM / aBezneze, 1.0f / -bBenzene);
 //     return hmq->R0;
 // }
 
-static double MQ135_GetPPM(MQ135_HandleTypeDef *hmq)
+static double MQ135_GetPPM(mq135_sensor_t *hmq)
 {
     float RS = MQ135_GetResistance(hmq);
     return aBezneze * powf(RS / hmq->R0, bBenzene);
 }
 
-// static double MQ135_GetCorrectedPPM(MQ135_HandleTypeDef *hmq,
+// static double MQ135_GetCorrectedPPM(mq135_sensor_t *hmq,
 //                                     float                temperature,
 //                                     float                humidity)
 // {
 //     float RS =
-//         MQ135_GetResistance(hmq) / MQ135_GetCorrection(temperature, humidity);
+//         MQ135_GetResistance(hmq) / MQ135_GetCorrection(temperature,
+//         humidity);
 //     return aBezneze * powf(RS / hmq->R0, bBenzene);
 // }
 
-static double MQ135_GetCO_PPM(MQ135_HandleTypeDef *hmq)
+static double MQ135_GetCO_PPM(mq135_sensor_t *hmq)
 {
     float RS    = MQ135_GetResistance(hmq);
     float ratio = RS / hmq->R0;
     return powf(10.0f, (aCO * log10f(ratio) + bCO));
 }
 
-static double MQ135_GetCO2_PPM(MQ135_HandleTypeDef *hmq)
+static double MQ135_GetCO2_PPM(mq135_sensor_t *hmq)
 {
     float RS    = MQ135_GetResistance(hmq);
     float ratio = RS / hmq->R0;
     return powf(10.0f, (aCO2 * log10f(ratio) + bCO2));
 }
 
-static double MQ135_GetSmoke_PPM(MQ135_HandleTypeDef *hmq)
+static double MQ135_GetSmoke_PPM(mq135_sensor_t *hmq)
 {
     float RS    = MQ135_GetResistance(hmq);
     float ratio = RS / hmq->R0;
     return powf(10.0f, (aSmoke * log10f(ratio) + bSmoke));
 }
 
-void AQ_Init(MQ135_HandleTypeDef *hmq_in, MQ135_HandleTypeDef *hmq_out)
+void AQ_Init(mq135_sensor_t *hmq_in, mq135_sensor_t *hmq_out)
 {
     MQ135_Init(hmq_in,
                &hadc,
@@ -158,9 +159,9 @@ void AQ_Init(MQ135_HandleTypeDef *hmq_in, MQ135_HandleTypeDef *hmq_out)
                                  // 측정하는 게 가장 정확)
 }
 
-void AQ_Read(MQ135_HandleTypeDef *hmq_in,
-             MQ135_HandleTypeDef *hmq_out,
-             mq135_data_t        *mq135)
+void AQ_Read(mq135_sensor_t *hmq_in,
+             mq135_sensor_t *hmq_out,
+             mq135_data_t   *mq135)
 {
     mq135->benzene_ppm_in = MQ135_GetPPM(hmq_in) / 10.000;
     mq135->co_ppm_in      = MQ135_GetCO_PPM(hmq_in) / 9.00;
