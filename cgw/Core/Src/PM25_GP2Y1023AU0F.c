@@ -41,6 +41,7 @@ static void sharp_dust_sensor_scan(sharp_dust_sensor_t *sensor)
                                    GPIO_PIN_RESET,
                                    100000); // 최대 100ms 대기
 #if (DEBUG_LEVEL > 0)
+    printf("\r\n=== PM2.5 Sensor ===\r\n");
     printf("duration_us: %lu\r\n", duration_us);
 #endif
     float duration_ms = duration_us / 1000.0f;
@@ -81,7 +82,6 @@ void PM_Read(sharp_dust_sensor_t *sensor, float *pm)
 
 #if (DEBUG_LEVEL > 0)
     // 농도 출력
-    printf("\r\n=== PM2.5 Sensor ===\r\n");
     printf("Dust concentration: %.2f ugram/m^3\r\n", *pm);
 #endif
 }

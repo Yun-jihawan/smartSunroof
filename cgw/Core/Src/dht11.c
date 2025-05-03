@@ -49,9 +49,6 @@ static uint8_t DHT11_Check_Response(GPIO_TypeDef *port, uint16_t pin)
     while ((HAL_GPIO_ReadPin(port, pin)))
         ; // wait for the pin to go low
 
-#if (DEBUG_LEVEL > 0)
-    printf("DHT11 응답: %d\r\n", Response);
-#endif
     return Response;
 }
 
@@ -98,14 +95,6 @@ static void DHT11_Read_Data(dht11_sensor_t *sensor)
                sum,
                sensor->SUM);
     }
-    else
-    {
-        printf("DHT11 데이터 읽기 성공 - 습도: %d.%d%%, 온도: %d.%d°C\r\n",
-               sensor->Rh_byte1,
-               sensor->Rh_byte2,
-               sensor->Temp_byte1,
-               sensor->Temp_byte2);
-    }
 #endif
 }
 
@@ -137,10 +126,7 @@ void DHT_Read(dht11_sensor_t *sensors, dht11_data_t *data)
 
 #if (DEBUG_LEVEL > 0)
     printf("\r\n=== DHT Sensor ===\r\n");
-    printf("내부[습도:%d%%, 온도:%d°C], 외부[습도:%d%%, 온도:%d°C]\r\n",
-           data[0].rh,
-           data[0].temp,
-           data[1].rh,
-           data[1].temp);
+    printf("[내부] 습도: %d%%, 온도: %d°C\r\n", data[0].rh, data[0].temp);
+    printf("[외부] 습도: %d%%, 온도: %d°C\r\n", data[1].rh, data[1].temp);
 #endif
 }
