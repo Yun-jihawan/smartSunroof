@@ -1,14 +1,18 @@
 
 #include "mq135.h"
 
+#include "adc.h"
+#include "debug.h"
+#include "main.h"
+
 #include <math.h>
 
 static const float aBezneze = 23.4461175f;
 static const float bBenzene = -3.98724605f;
-static const float aCor     = 0.00035f;
-static const float bCor     = 0.02718f;
-static const float cCor     = 1.39538f;
-static const float dCor     = 0.0018f;
+// static const float aCor     = 0.00035f;
+// static const float bCor     = 0.02718f;
+// static const float cCor     = 1.39538f;
+// static const float dCor     = 0.0018f;
 
 // Additional gas curve coefficients
 static const float aCO    = -0.36f;
@@ -54,17 +58,17 @@ static float MQ135_GetResistance(MQ135_HandleTypeDef *hmq)
     return ((hmq->vref / voltage) - 1.0f) * hmq->RL;
 }
 
-static float MQ135_GetCorrection(float t, float h)
-{
-    return aCor * t * t - bCor * t + cCor - (h - 33.0f) * dCor;
-}
+// static float MQ135_GetCorrection(float t, float h)
+// {
+//     return aCor * t * t - bCor * t + cCor - (h - 33.0f) * dCor;
+// }
 
-void MQ135_Init(MQ135_HandleTypeDef *hmq,
-                ADC_HandleTypeDef   *hadc,
-                uint32_t             channel,
-                int                  average,
-                uint8_t              bits,
-                float                vref)
+static void MQ135_Init(MQ135_HandleTypeDef *hmq,
+                       ADC_HandleTypeDef   *hadc,
+                       uint32_t             channel,
+                       int                  average,
+                       uint8_t              bits,
+                       float                vref)
 {
     if (hmq == NULL)
         return;
@@ -77,57 +81,109 @@ void MQ135_Init(MQ135_HandleTypeDef *hmq,
     hmq->R0            = 1.0f;
 }
 
-void MQ135_SetRL(MQ135_HandleTypeDef *hmq, float RL)
+static void MQ135_SetRL(MQ135_HandleTypeDef *hmq, float RL)
 {
     if (hmq)
         hmq->RL = RL;
 }
 
-void MQ135_SetR0(MQ135_HandleTypeDef *hmq, float R0)
+static void MQ135_SetR0(MQ135_HandleTypeDef *hmq, float R0)
 {
     if (hmq)
         hmq->R0 = R0;
 }
 
-float MQ135_Calibrate(MQ135_HandleTypeDef *hmq, int cPPM)
-{
-    float RS = MQ135_GetResistance(hmq);
-    hmq->R0  = RS * powf((float)cPPM / aBezneze, 1.0f / -bBenzene);
-    return hmq->R0;
-}
+// static float MQ135_Calibrate(MQ135_HandleTypeDef *hmq, int cPPM)
+// {
+//     float RS = MQ135_GetResistance(hmq);
+//     hmq->R0  = RS * powf((float)cPPM / aBezneze, 1.0f / -bBenzene);
+//     return hmq->R0;
+// }
 
-double MQ135_GetPPM(MQ135_HandleTypeDef *hmq)
+static double MQ135_GetPPM(MQ135_HandleTypeDef *hmq)
 {
     float RS = MQ135_GetResistance(hmq);
     return aBezneze * powf(RS / hmq->R0, bBenzene);
 }
 
-double MQ135_GetCorrectedPPM(MQ135_HandleTypeDef *hmq,
-                             float                temperature,
-                             float                humidity)
-{
-    float RS =
-        MQ135_GetResistance(hmq) / MQ135_GetCorrection(temperature, humidity);
-    return aBezneze * powf(RS / hmq->R0, bBenzene);
-}
+// static double MQ135_GetCorrectedPPM(MQ135_HandleTypeDef *hmq,
+//                                     float                temperature,
+//                                     float                humidity)
+// {
+//     float RS =
+//         MQ135_GetResistance(hmq) / MQ135_GetCorrection(temperature, humidity);
+//     return aBezneze * powf(RS / hmq->R0, bBenzene);
+// }
 
-double MQ135_GetCO_PPM(MQ135_HandleTypeDef *hmq)
+static double MQ135_GetCO_PPM(MQ135_HandleTypeDef *hmq)
 {
     float RS    = MQ135_GetResistance(hmq);
     float ratio = RS / hmq->R0;
     return powf(10.0f, (aCO * log10f(ratio) + bCO));
 }
 
-double MQ135_GetCO2_PPM(MQ135_HandleTypeDef *hmq)
+static double MQ135_GetCO2_PPM(MQ135_HandleTypeDef *hmq)
 {
     float RS    = MQ135_GetResistance(hmq);
     float ratio = RS / hmq->R0;
     return powf(10.0f, (aCO2 * log10f(ratio) + bCO2));
 }
 
-double MQ135_GetSmoke_PPM(MQ135_HandleTypeDef *hmq)
+static double MQ135_GetSmoke_PPM(MQ135_HandleTypeDef *hmq)
 {
     float RS    = MQ135_GetResistance(hmq);
     float ratio = RS / hmq->R0;
     return powf(10.0f, (aSmoke * log10f(ratio) + bSmoke));
+}
+
+void AQ_Init(MQ135_HandleTypeDef *hmq_in, MQ135_HandleTypeDef *hmq_out)
+{
+    MQ135_Init(hmq_in,
+               &hadc,
+               ADC_CHANNEL_0,
+               MQ135_DEFAULT_AVERAGE,
+               MQ135_DEFAULT_ADC_BITS,
+               MQ135_DEFAULT_VREF);
+    MQ135_SetRL(hmq_in, 10.0f); // 로드 저항 값 설정 (보통 10k옴)
+    MQ135_SetR0(hmq_in, 9.83f); // 깨끗한 공기에서의 초기 R0 값 (직접 보정해서
+                                // 측정하는 게 가장 정확)
+    MQ135_Init(hmq_out,
+               &hadc,
+               ADC_CHANNEL_1,
+               MQ135_DEFAULT_AVERAGE,
+               MQ135_DEFAULT_ADC_BITS,
+               MQ135_DEFAULT_VREF);
+    MQ135_SetRL(hmq_out, 10.0f); // 로드 저항 값 설정 (보통 10k옴)
+    MQ135_SetR0(hmq_out, 9.83f); // 깨끗한 공기에서의 초기 R0 값 (직접 보정해서
+                                 // 측정하는 게 가장 정확)
+}
+
+void AQ_Read(MQ135_HandleTypeDef *hmq_in,
+             MQ135_HandleTypeDef *hmq_out,
+             mq135_data_t        *mq135)
+{
+    mq135->benzene_ppm_in = MQ135_GetPPM(hmq_in) / 10.000;
+    mq135->co_ppm_in      = MQ135_GetCO_PPM(hmq_in) / 9.00;
+    mq135->co2_ppm_in     = MQ135_GetCO2_PPM(hmq_in) / 5.00;
+    mq135->smoke_ppm_in   = MQ135_GetSmoke_PPM(hmq_in) / 50.00;
+
+    mq135->benzene_ppm_out = MQ135_GetPPM(hmq_out) / 10.000;
+    mq135->co_ppm_out      = MQ135_GetCO_PPM(hmq_out) / 9.00;
+    mq135->co2_ppm_out     = MQ135_GetCO2_PPM(hmq_out) / 5.00;
+    mq135->smoke_ppm_out   = MQ135_GetSmoke_PPM(hmq_out) / 50.00;
+
+#if (DEBUG_LEVEL > 0)
+    // TeraTerm으로 uart통신해서 출력하기
+    printf("\r\n=== AQ Indoor Sensor ===\r\n");
+    printf("Benzene : %.3f ppm \r\n", mq135->benzene_ppm_in);
+    printf("CO : %.2f ppm\r\n", mq135->co_ppm_in);
+    printf("CO2 : %.2f ppm\r\n", mq135->co2_ppm_in);
+    printf("Smoke : %.2f ppm\r\n", mq135->smoke_ppm_in);
+
+    printf("\r\n=== AQ Outdoor Sensor ===\r\n");
+    printf("Benzene : %.3f ppm \r\n", mq135->benzene_ppm_out);
+    printf("CO : %.2f ppm\r\n", mq135->co_ppm_out);
+    printf("CO2 : %.2f ppm\r\n", mq135->co2_ppm_out);
+    printf("Smoke : %.2f ppm\r\n", mq135->smoke_ppm_out);
+#endif
 }

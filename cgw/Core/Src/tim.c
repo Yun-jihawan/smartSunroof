@@ -162,4 +162,9 @@ void delay_us(uint16_t us)
     while ((__HAL_TIM_GET_COUNTER(&htim6)) < us)
         ;
 }
+
+uint32_t micros(void)
+{
+    return __HAL_TIM_GET_COUNTER(&htim6);
+}
 /* USER CODE END 1 */

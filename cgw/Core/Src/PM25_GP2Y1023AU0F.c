@@ -1,35 +1,13 @@
 #include "PM25_GP2Y1023AU0F.h"
 
-uint32_t micros(void)
-{
-    /*
-     * TIM2
-     * prescalar = 0, period = 65535
-     */
-    return __HAL_TIM_GET_COUNTER(&htim2);
-}
+#include "debug.h"
+#include "main.h"
+#include "tim.h"
 
-// 초기화 함수: 센서의 핀과 포트를 설정합니다.
-void sharp_dust_sensor_init(sharp_dust_sensor_t *sensor,
-                            GPIO_TypeDef        *port,
-                            uint16_t             pin)
-{
-    sensor->port          = port;
-    sensor->pin           = pin;
-    sensor->concentration = 0.0f;
-
-    // PA0 핀을 입력 모드로 설정
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin              = pin;
-    GPIO_InitStruct.Mode             = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull             = GPIO_NOPULL;
-    HAL_GPIO_Init(port, &GPIO_InitStruct);
-}
-
-uint32_t pulseIn(GPIO_TypeDef *port,
-                 uint16_t      pin,
-                 GPIO_PinState state,
-                 uint32_t      timeout_us)
+static uint32_t pulseIn(GPIO_TypeDef *port,
+                        uint16_t      pin,
+                        GPIO_PinState state,
+                        uint32_t      timeout_us)
 {
     uint32_t start         = micros();
     uint32_t timeout_start = start;
@@ -56,14 +34,15 @@ uint32_t pulseIn(GPIO_TypeDef *port,
 }
 
 // 센서 스캔 함수
-void sharp_dust_sensor_scan(sharp_dust_sensor_t *sensor)
+static void sharp_dust_sensor_scan(sharp_dust_sensor_t *sensor)
 {
     uint32_t duration_us = pulseIn(sensor->port,
                                    sensor->pin,
                                    GPIO_PIN_RESET,
                                    100000); // 최대 100ms 대기
-    //	printf("duration_us: %lu\r\n", duration_us);
-
+#if (DEBUG_LEVEL > 0)
+    printf("duration_us: %lu\r\n", duration_us);
+#endif
     float duration_ms = duration_us / 1000.0f;
 
     // 보정식 (원래 아두이노 코드 기반)
@@ -81,8 +60,28 @@ void sharp_dust_sensor_scan(sharp_dust_sensor_t *sensor)
     sensor->concentration = dust;
 }
 
-// 농도 값을 반환하는 함수
-float sharp_dust_sensor_get_concentration(sharp_dust_sensor_t *sensor)
+// 초기화 함수: 센서의 핀과 포트를 설정합니다.
+void PM_Init(sharp_dust_sensor_t *sensor)
 {
-    return sensor->concentration;
+    sensor->port          = PM2_5_GPIO_Port;
+    sensor->pin           = PM2_5_Pin;
+    sensor->concentration = 0.0f;
+
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin              = sensor->pin;
+    GPIO_InitStruct.Mode             = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull             = GPIO_NOPULL;
+    HAL_GPIO_Init(sensor->port, &GPIO_InitStruct);
+}
+
+void PM_Read(sharp_dust_sensor_t *sensor, float *pm)
+{
+    sharp_dust_sensor_scan(sensor);
+    *pm = sensor->concentration;
+
+#if (DEBUG_LEVEL > 0)
+    // 농도 출력
+    printf("\r\n=== PM2.5 Sensor ===\r\n");
+    printf("Dust concentration: %.2f ugram/m^3\r\n", *pm);
+#endif
 }

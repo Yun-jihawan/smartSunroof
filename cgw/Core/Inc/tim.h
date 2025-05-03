@@ -45,6 +45,7 @@ void MX_TIM6_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 void delay_us(uint16_t us);
+uint32_t micros(void);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

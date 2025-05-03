@@ -22,4 +22,9 @@ typedef struct
     uint8_t external_temp;
 } dht11_data_t;
 
+void DHT_Init(dht11_sensor_t *internal, dht11_sensor_t *external);
+void DHT_Read(dht11_sensor_t *internal,
+              dht11_sensor_t *external,
+              dht11_data_t   *dht);
+
 #endif /* DHT11_H_ */

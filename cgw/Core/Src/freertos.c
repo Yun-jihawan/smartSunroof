@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "PM25_GP2Y1023AU0F.h"
 #include "dht11.h"
 #include "mq135.h"
 /* USER CODE END Includes */
@@ -53,27 +54,6 @@ osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
-/* Definitions for aqReaderTask */
-osThreadId_t aqReaderTaskHandle;
-const osThreadAttr_t aqReaderTask_attributes = {
-  .name = "aqReaderTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for pmReaderTask */
-osThreadId_t pmReaderTaskHandle;
-const osThreadAttr_t pmReaderTask_attributes = {
-  .name = "pmReaderTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for dhtReaderTask */
-osThreadId_t dhtReaderTaskHandle;
-const osThreadAttr_t dhtReaderTask_attributes = {
-  .name = "dhtReaderTask",
-  .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -83,9 +63,6 @@ const osThreadAttr_t dhtReaderTask_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-extern void StartAqReaderTask(void *argument);
-extern void StartPmReaderTask(void *argument);
-extern void StartDhtReaderTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -123,9 +100,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-  mq135_data_t aq;
-  float pm;
-  dht11_data_t dht;
+
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -148,15 +123,6 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of aqReaderTask */
-  aqReaderTaskHandle = osThreadNew(StartAqReaderTask, (void *)&aq, &aqReaderTask_attributes);
-
-  /* creation of pmReaderTask */
-  pmReaderTaskHandle = osThreadNew(StartPmReaderTask, (void *)&pm, &pmReaderTask_attributes);
-
-  /* creation of dhtReaderTask */
-  dhtReaderTaskHandle = osThreadNew(StartDhtReaderTask, (void *)&dht, &dhtReaderTask_attributes);
-
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -177,10 +143,27 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  MQ135_HandleTypeDef hmq_in;
+  MQ135_HandleTypeDef hmq_out;
+  sharp_dust_sensor_t dust_sensor;
+  dht11_sensor_t      dht_internal;
+  dht11_sensor_t      dht_external;
+
+  mq135_data_t aq;
+  float        pm;
+  dht11_data_t dht;
+
+  AQ_Init(&hmq_in, &hmq_out);
+  PM_Init(&dust_sensor);
+  DHT_Init(&dht_internal, &dht_external);
+
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    AQ_Read(&hmq_in, &hmq_out, &aq);
+    PM_Read(&dust_sensor, &pm);
+    DHT_Read(&dht_internal, &dht_external, &dht);
+    osDelay(5000);
   }
   /* USER CODE END StartDefaultTask */
 }

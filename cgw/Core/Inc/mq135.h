@@ -34,22 +34,9 @@ typedef struct
     double smoke_ppm_out;
 } mq135_data_t;
 
-void   MQ135_Init(MQ135_HandleTypeDef *hmq,
-                  ADC_HandleTypeDef   *hadc,
-                  uint32_t             channel,
-                  int                  average,
-                  uint8_t              bits,
-                  float                vref);
-void   MQ135_SetRL(MQ135_HandleTypeDef *hmq, float RL);
-void   MQ135_SetR0(MQ135_HandleTypeDef *hmq, float R0);
-float  MQ135_Calibrate(MQ135_HandleTypeDef *hmq, int cPPM);
-double MQ135_GetPPM(MQ135_HandleTypeDef *hmq);
-double MQ135_GetCorrectedPPM(MQ135_HandleTypeDef *hmq,
-                             float                temperature,
-                             float                humidity);
-
-double MQ135_GetCO_PPM(MQ135_HandleTypeDef *hmq);
-double MQ135_GetCO2_PPM(MQ135_HandleTypeDef *hmq);
-double MQ135_GetSmoke_PPM(MQ135_HandleTypeDef *hmq);
+void AQ_Init(MQ135_HandleTypeDef *hmq_in, MQ135_HandleTypeDef *hmq_out);
+void AQ_Read(MQ135_HandleTypeDef *hmq_in,
+             MQ135_HandleTypeDef *hmq_out,
+             mq135_data_t        *mq135);
 
 #endif
