@@ -3,9 +3,8 @@
 #include "usart.h"
 
 #if (DEBUG_LEVEL > 0)
-int __io_putchar(int ch)
+void _putchar(char ch)
 {
     HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-    return ch;
 }
 #endif
