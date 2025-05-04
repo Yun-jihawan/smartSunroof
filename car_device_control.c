@@ -7,104 +7,131 @@
  사용자 모드에서는 season, operate, temp_user 입력 받는데 season은 밑에서 계절이라고 설명했지만 결국 에어컨/히터 구분하는 변수
  사용자 조작에서는 on/off 둘다 가능, 원하는 온도로 설정하지만 그냥 팬만 돌리는게 전부라서 온도 설정까지는 못할듯 합니다.
  
+
+ ** 2025.05.04 추가 수정 사항
+ 환기 모드 팬은 내기/외기 둘중 하나로 항상 가동
+ 에어컨/히터는 이미 돌아가고있는 팬에 그에 맞는 공기를 주입하는 것
+ 
+ 기존 fan_on 함수 -> conditioner_on, fan_off -> conditioner_off
+ fan_on/fan_off 함수는 팬을 내기/외기 모드로 키고 끄는 것
+ conditioner_on / conditioner_off 함수는 에어컨/히터 on/off 함수
+
+ 내기/외기 모드를 구분하는건 나중에 led로 보여줘도 될듯
+
+ 사용자가 자동차 시동을 켰을 때
+ 1. 선루프 제어 함수를 통해 선루프 상태와 내기/외기 순환 모드를 결정
+ 2. fan_on 함수 호출을 통해 내기/외기 모드로 팬 on
+ 3. smart_device_command 함수를 통해 에어컨/히터 제어
  */
  
- 
- #include "car_device_control.h"
+
+#include "car_device_control.h"
 
 
- // 불쾌지수 변수
- float current_in_di1;
- float current_out_di1;
- 
- // 여름철 DI 수치 구하는 함수(불쾌지수)
- float calculate_discomfort_index(float temperature, float humidity) {
-     return (0.81f * temperature + 0.01f * humidity * (0.99f * temperature - 14.3f) + 46.3f);
- }
- void fan_on(uint16_t GPIO_Pin)
- {
-     HAL_GPIO_WritePin(GPIOA, GPIO_Pin, GPIO_PIN_SET);
-     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET); // IN LOW → 릴레이 작동 → 팬 ON
- }
- 
- void fan_off(uint16_t GPIO_Pin)
- {
-     HAL_GPIO_WritePin(GPIOA, GPIO_Pin, GPIO_PIN_RESET);
-     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET); // IN HIGH → 릴레이 끊김 → 팬 OFF
- }
- void operation_conditioner(uint8_t season, uint8_t operate, float temp)
- {
-     if (season == 0)
-     {
-         // 에어컨 on/off 구현, 파란불 LED 에어컨
-         if (operate == 1)
-         {
-             fan_on(GPIO_PIN_6);
-             snprintf(buf1, sizeof(buf1), "air conditioner ON");
-         }
-         else
-         {
-             fan_off(GPIO_PIN_6);
-             snprintf(buf1, sizeof(buf1), "air conditioner OFF");
-         }
- 
-     }
-     else
-     {
-         // 히터 on/off 구현, 빨간색 LED 히터
-         if (operate == 1)
-         {
-             fan_on(GPIO_PIN_7);
-             snprintf(buf1, sizeof(buf1), "heater ON");
-         }
-         else
-         {
-             fan_off(GPIO_PIN_7);
-             snprintf(buf1, sizeof(buf1), "heater OFF");
-         }
- 
-     }
- }
+float current_in_di1;
+float current_out_di1;
 
- //에어컨, 히터 스마트 제어 함수
- uint8_t smart_device_command(float temp_in, float temp_out, float temp_user, float humi_in, float humi_out)
- {
-     current_in_di1 = calculate_discomfort_index(temp_in, humi_in); // 현재 내부 불쾌지수
-     current_out_di1 = calculate_discomfort_index(temp_out, humi_out); // 현재 외부 불쾌지수
- 
-     uint8_t season = 0; // 0 == 여름, 1 == 겨울 
- 
-     
-     if (temp_out < 10.0f) // 외부 온도가 10도보다 낮으면 히터를 사용하는 계절로 판단
-     {
-         season = 1; 
- 
-         // 차량 내부 온도가 사용자가 설정한 온도보다 낮으면 히터를 사용자가 원하는 온도로 on
-         if (temp_in < temp_user)
-         {
-             if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7) == GPIO_PIN_RESET) // 히터가 켜져있지 않으면 히터 on
-             {
-                operation_conditioner(season, 1, temp_user);             
-             }
-         }
-     }
- 
-     //season이 여름으로 결정됐으므로 여름은 불쾌지수로 판단
-     else if (current_in_di1 > 68)
-     {
-         if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6) == GPIO_PIN_RESET) // 에어컨이 켜져있지 않으면 에어컨on
-         {
-            operation_conditioner(season, 1, temp_user);
-         }
-     }
- 
-     return season; // 현재 계절을 반환, 확인용으로 해놓긴했는데 없애도 무방할듯, 오히려 에어컨, 히터 가동상태를를 리턴하는게 나을수도?
- }
- 
- // 사용자 조작으로 들어올 경우 조작 함수, 
- // 메인이든 어디든 사용자모드인지 스마트제어모드인지 구분 후 smart_device_command, user_device_command 둘 중 하나 호출하면 될듯
- void user_device_command(uint8_t season, uint8_t operate, uint8_t temp_user)
- {
-     operation_conditioner(season, operate, temp_user);
- }
- 
+float calculate_discomfort_index(float temperature, float humidity) {
+    return (0.81f * temperature + 0.01f * humidity * (0.99f * temperature - 14.3f) + 46.3f);
+}
+void fan_on(uint8_t in_out_mode)
+{
+	if (in_out_mode == 0)
+	{
+		// 내기모드
+	}
+	else
+	{
+		// 외기모드
+	}
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET); // IN LOW → 릴레이 작동 → 팬 ON
+
+}
+void fan_off(uint16_t in_out_mode)
+{
+	if (in_out_mode == 0)
+		{
+			// 내기모드
+		}
+		else
+		{
+			// 외기모드
+		}
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET); // IN HIGH → 릴레이 끊김 → 팬 OFF
+}
+void conditioner_on(uint16_t GPIO_Pin)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_Pin, GPIO_PIN_SET);
+}
+
+void conditioner_off(uint16_t GPIO_Pin)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_Pin, GPIO_PIN_RESET);
+}
+void operation_conditioner(uint8_t season, uint8_t operate, float temp)
+{
+	if (season == 0)
+	{
+		// 에어컨 on/off 구현, 파란불 LED 에어컨
+		if (operate == 1)
+		{
+			conditioner_on(GPIO_PIN_6);
+		}
+		else
+		{
+			conditioner_off(GPIO_PIN_6);
+		}
+
+	}
+	else
+	{
+		// 히터 on/off 구현, 빨간색 LED 히터
+		if (operate == 1)
+		{
+			conditioner_on(GPIO_PIN_7);
+		}
+		else
+		{
+			conditioner_off(GPIO_PIN_7);
+		}
+
+	}
+}
+uint8_t smart_device_command(float temp_in, float temp_out, float temp_user, float humi_in, float humi_out)
+{
+	current_in_di1 = calculate_discomfort_index(temp_in, humi_in); // 현재 내부 불쾌지수
+	current_out_di1 = calculate_discomfort_index(temp_out, humi_out); // 현재 외부 불쾌지수
+
+	uint8_t season = 0; // 0 == 여름, 1 == 겨울
+
+	if (temp_out < 10.0f)
+	{
+		season = 1; // 외부 온도가 10도보나 낮으면 히터를 사용하는 계절로 인식
+
+		// 차량 내부 온도가 사용자가 설정한 온도보다 낮으면 히터를 사용자가 원하는 온도로 on
+		if (temp_in < temp_user)
+		{
+			if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7) == GPIO_PIN_RESET) // 온도가 낮은데 히터가 안켜져 있으면 히터 키기
+			{
+				operation_conditioner(season, 1, temp_user);
+				return season;
+			}
+		}
+	}
+
+	//season이 여름으로 결정됐으므로 여름은 불쾌지수로 판단
+	else if (current_in_di1 > 68)
+	{
+		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6) == GPIO_PIN_RESET)
+		{
+			operation_conditioner(season, 1, temp_user);
+			return season;		
+        }
+	}
+    return KEEP_STATE;
+}
+
+void user_device_command(uint8_t season, uint8_t operate, uint8_t temp_user)
+{
+	operation_conditioner(season, operate, temp_user);
+}
