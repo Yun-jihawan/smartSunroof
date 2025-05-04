@@ -43,7 +43,9 @@
  
  extern SunroofInput_t sunroof_input;
  extern SensingThreshold_t thershold_input;
-
+ extern uint8_t in_out_mode;
+ extern float current_in_di;
+ extern float current_out_di;
  // 정규화 함수
  float Normalize(float value, float threshold);
  
