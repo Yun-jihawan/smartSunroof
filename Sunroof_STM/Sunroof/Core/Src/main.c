@@ -48,6 +48,8 @@
 
 #define AUTO_MODE 0
 #define USER_MODE 1
+
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -106,7 +108,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 // UART RX
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if (huart->Instance == USART2) {
+    if (huart->Instance == USART4) {
     	rx_payload = 0;
     	rx_payload |= ((uint16_t)rx_buf[0] << 8);
     	rx_payload |= ((uint16_t)rx_buf[1]);
@@ -114,10 +116,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		roof_state = ((rx_payload >> 8) & 0x03);
 		film_opacity = ((rx_payload) & 0x01);
 
-		printf("Roof : %d, Opacity: %d\r\n", roof_state, film_opacity);
-
         // 다시 수신 시작 (반복 수신)
-        HAL_UART_Receive_DMA(&huart2, rx_buf, 2);
+        HAL_UART_Receive_DMA(&huart4, rx_buf, 2);
     }
 }
 /* USER CODE END 0 */
@@ -152,17 +152,18 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_USART2_UART_Init();
   MX_ADC_Init();
   MX_TIM7_Init();
   MX_TIM2_Init();
+  MX_USART4_UART_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim7);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-  HAL_UART_Receive_DMA(&huart2, rx_buf, 2);
+
+  HAL_UART_Receive_DMA(&huart4, rx_buf, 2);
 
   // Initialize
   encoder = 0;
@@ -183,11 +184,10 @@ int main(void)
 		  sensor_read = 0;
 
 		  //UART Send
-		  tx_payload = 0x41424344;
-		  //tx_payload = 0;
-		  //tx_payload |= ((uint32_t)in_illum & 0x0FFF) << 20;  // In Illum : 12 -> 32 - 12 = 20
-		  //tx_payload |= ((uint32_t)out_illum & 0x0FFF) << 8;   // Out Illum : 12 -> 20 - 12 = 8
-		  //tx_payload |= (rain_state & 0x01) << 7;               // rain_flag : 1 0 -> 8 - 1 = 7
+		  tx_payload = 0;
+		  tx_payload |= ((uint32_t)in_illum & 0x0FFF) << 20;  // In Illum : 12 -> 32 - 12 = 20
+		  tx_payload |= ((uint32_t)out_illum & 0x0FFF) << 8;   // Out Illum : 12 -> 20 - 12 = 8
+		  tx_payload |= (rain_state & 0x01) << 7;               // rain_flag : 1 0 -> 8 - 1 = 7
 
 		  Send_Sensor_Data();
 	  }
@@ -212,7 +212,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Configure the main internal regulator output voltage
   */
@@ -242,12 +241,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2;
-  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-  {
-    Error_Handler();
-  }
 }
 
 /**
@@ -271,7 +264,7 @@ void Send_Sensor_Data(void) {
 	tx_buf[2] = (tx_payload >> 8) & 0xFF;
 	tx_buf[3] = tx_payload & 0xFF;
 
-	HAL_UART_Transmit(&huart2, tx_buf, 4, 100);
+	HAL_UART_Transmit(&huart4, tx_buf, 4, 100);
 }
 /* USER CODE END 4 */
 
