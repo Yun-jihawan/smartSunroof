@@ -88,6 +88,14 @@ void MX_ADC_Init(void)
   {
     Error_Handler();
   }
+
+  /** Configure for the selected ADC regular channel to be converted.
+  */
+  sConfig.Channel = ADC_CHANNEL_10;
+  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN ADC_Init 2 */
 
   /* USER CODE END ADC_Init 2 */
@@ -106,12 +114,19 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     /* ADC1 clock enable */
     __HAL_RCC_ADC1_CLK_ENABLE();
 
+    __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOA_CLK_ENABLE();
     /**ADC GPIO Configuration
+    PC0     ------> ADC_IN10
     PA0     ------> ADC_IN0
     PA1     ------> ADC_IN1
     PA4     ------> ADC_IN4
     */
+    GPIO_InitStruct.Pin = WH148_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(WH148_GPIO_Port, &GPIO_InitStruct);
+
     GPIO_InitStruct.Pin = AQ_INTERNAL_Pin|AQ_EXTERNAL_Pin|PM2_5_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -135,10 +150,13 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     __HAL_RCC_ADC1_CLK_DISABLE();
 
     /**ADC GPIO Configuration
+    PC0     ------> ADC_IN10
     PA0     ------> ADC_IN0
     PA1     ------> ADC_IN1
     PA4     ------> ADC_IN4
     */
+    HAL_GPIO_DeInit(WH148_GPIO_Port, WH148_Pin);
+
     HAL_GPIO_DeInit(GPIOA, AQ_INTERNAL_Pin|AQ_EXTERNAL_Pin|PM2_5_Pin);
 
   /* USER CODE BEGIN ADC1_MspDeInit 1 */

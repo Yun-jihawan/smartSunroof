@@ -61,6 +61,8 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define MCO_Pin GPIO_PIN_0
 #define MCO_GPIO_Port GPIOH
+#define WH148_Pin GPIO_PIN_0
+#define WH148_GPIO_Port GPIOC
 #define DHT11_EXTERNAL_Pin GPIO_PIN_1
 #define DHT11_EXTERNAL_GPIO_Port GPIOC
 #define AQ_INTERNAL_Pin GPIO_PIN_0
