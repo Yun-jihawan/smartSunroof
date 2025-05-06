@@ -1,0 +1,23 @@
+[
+    {
+        "id": 1,
+        "PS_TEMP": 18.0,
+        "PS_AQL": 3,
+        "PS_DDL": 1,
+        "PS_BRL": 0
+    },
+    {
+        "id": 2,
+        "PS_TEMP": 16.0,
+        "PS_AQL": 2,
+        "PS_DDL": 0,
+        "PS_BRL": 0
+    },
+    {
+        "id": 3,
+        "PS_TEMP": 18.0,
+        "PS_AQL": 1,
+        "PS_DDL": 2,
+        "PS_BRL": 0
+    }
+]
