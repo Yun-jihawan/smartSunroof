@@ -116,21 +116,21 @@ static double MQ135_GetPPM(mq135_sensor_t *hmq)
 //     return aBezneze * powf(RS / hmq->R0, bBenzene);
 // }
 
-static double MQ135_GetCO_PPM(mq135_sensor_t *hmq)
+static double MQ135_GetCO(mq135_sensor_t *hmq)
 {
     float RS    = MQ135_GetResistance(hmq);
     float ratio = RS / hmq->R0;
     return powf(10.0f, (aCO * log10f(ratio) + bCO));
 }
 
-static double MQ135_GetCO2_PPM(mq135_sensor_t *hmq)
+static double MQ135_GetCO2(mq135_sensor_t *hmq)
 {
     float RS    = MQ135_GetResistance(hmq);
     float ratio = RS / hmq->R0;
     return powf(10.0f, (aCO2 * log10f(ratio) + bCO2));
 }
 
-static double MQ135_GetSmoke_PPM(mq135_sensor_t *hmq)
+static double MQ135_GetSmoke(mq135_sensor_t *hmq)
 {
     float RS    = MQ135_GetResistance(hmq);
     float ratio = RS / hmq->R0;
@@ -164,31 +164,33 @@ void AQ_Init(mq135_sensor_t *sensors)
 
 void AQ_Read(mq135_sensor_t *sensors, mq135_data_t *data)
 {
-    mq135_sensor_t *hmq_in  = &sensors[0];
-    mq135_sensor_t *hmq_out = &sensors[1];
+    mq135_sensor_t *hmq_in       = &sensors[0];
+    mq135_sensor_t *hmq_out      = &sensors[1];
+    mq135_data_t   *hmq_data_in  = &data[0];
+    mq135_data_t   *hmq_data_out = &data[1];
 
-    data[0].benzene_ppm = MQ135_GetPPM(hmq_in) / 10.000;
-    data[0].co_ppm      = MQ135_GetCO_PPM(hmq_in) / 9.00;
-    data[0].co2_ppm     = MQ135_GetCO2_PPM(hmq_in) / 5.00;
-    data[0].smoke_ppm   = MQ135_GetSmoke_PPM(hmq_in) / 50.00;
+    hmq_data_in->benzene = MQ135_GetPPM(hmq_in) / 10.000;
+    hmq_data_in->co      = MQ135_GetCO(hmq_in) / 9.00;
+    hmq_data_in->co2     = MQ135_GetCO2(hmq_in) / 5.00;
+    hmq_data_in->smoke   = MQ135_GetSmoke(hmq_in) / 50.00;
 
-    data[1].benzene_ppm = MQ135_GetPPM(hmq_out) / 10.000;
-    data[1].co_ppm      = MQ135_GetCO_PPM(hmq_out) / 9.00;
-    data[1].co2_ppm     = MQ135_GetCO2_PPM(hmq_out) / 5.00;
-    data[1].smoke_ppm   = MQ135_GetSmoke_PPM(hmq_out) / 50.00;
+    hmq_data_out->benzene = MQ135_GetPPM(hmq_out) / 10.000;
+    hmq_data_out->co      = MQ135_GetCO(hmq_out) / 9.00;
+    hmq_data_out->co2     = MQ135_GetCO2(hmq_out) / 5.00;
+    hmq_data_out->smoke   = MQ135_GetSmoke(hmq_out) / 50.00;
 
 #if (DEBUG_LEVEL > 0)
     // TeraTerm으로 uart통신해서 출력하기
     printf("\r\n=== AQ Indoor Sensor ===\r\n");
-    printf("Benzene : %.3f ppm \r\n", data[0].benzene_ppm);
-    printf("CO : %.2f ppm\r\n", data[0].co_ppm);
-    printf("CO2 : %.2f ppm\r\n", data[0].co2_ppm);
-    printf("Smoke : %.2f ppm\r\n", data[0].smoke_ppm);
+    printf("Benzene : %.3f ppm \r\n", hmq_data_in->benzene);
+    printf("CO : %.2f ppm\r\n", hmq_data_in->co);
+    printf("CO2 : %.2f ppm\r\n", hmq_data_in->co2);
+    printf("Smoke : %.2f ppm\r\n", hmq_data_in->smoke);
 
     printf("\r\n=== AQ Outdoor Sensor ===\r\n");
-    printf("Benzene : %.3f ppm \r\n", data[1].benzene_ppm);
-    printf("CO : %.2f ppm\r\n", data[1].co_ppm);
-    printf("CO2 : %.2f ppm\r\n", data[1].co2_ppm);
-    printf("Smoke : %.2f ppm\r\n", data[1].smoke_ppm);
+    printf("Benzene : %.3f ppm \r\n", hmq_data_out->benzene);
+    printf("CO : %.2f ppm\r\n", hmq_data_out->co);
+    printf("CO2 : %.2f ppm\r\n", hmq_data_out->co2);
+    printf("Smoke : %.2f ppm\r\n", hmq_data_out->smoke);
 #endif
 }

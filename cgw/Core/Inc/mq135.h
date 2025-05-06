@@ -23,10 +23,10 @@ typedef struct
 
 typedef struct
 {
-    double benzene_ppm;
-    double co_ppm;
-    double co2_ppm;
-    double smoke_ppm;
+    double benzene;
+    double co;
+    double co2;
+    double smoke;
 } mq135_data_t;
 
 void AQ_Init(mq135_sensor_t *sensors);
