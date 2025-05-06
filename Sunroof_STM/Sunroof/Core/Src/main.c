@@ -62,7 +62,8 @@
 /* USER CODE BEGIN PV */
 
 // Sensor Data & UART Send Data
-volatile int32_t encoder = 0;
+volatile int32_t roof_encoder = 0;
+volatile int32_t tilting_encoder = 0;
 volatile uint16_t in_illum = 0;
 volatile uint16_t out_illum = 0;
 volatile uint16_t rain_sense;
@@ -155,18 +156,23 @@ int main(void)
   MX_ADC_Init();
   MX_TIM7_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
   MX_USART4_UART_Init();
+  MX_USART2_UART_Init();
+  MX_USART5_UART_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim7);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
   HAL_UART_Receive_DMA(&huart4, rx_buf, 2);
 
+
   // Initialize
-  encoder = 0;
+  roof_encoder = 0;
   roof_state = STOP;
   Sunroof_Set(STOP);
   /* USER CODE END 2 */
@@ -212,6 +218,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Configure the main internal regulator output voltage
   */
@@ -238,6 +245,12 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2;
+  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }

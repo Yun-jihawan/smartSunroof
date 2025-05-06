@@ -38,8 +38,6 @@
         * Output
         * EVENT_OUT
         * EXTI
-     PA2   ------> USART2_TX
-     PA3   ------> USART2_RX
 */
 void MX_GPIO_Init(void)
 {
@@ -51,9 +49,10 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|ROOF_DIR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, TILTING_DIR_Pin|ROOF_DIR_Pin|TILTING_BRAKE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, GPIO_PIN_RESET);
@@ -67,22 +66,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ENC_A_Pin ENC_B_Pin */
-  GPIO_InitStruct.Pin = ENC_A_Pin|ENC_B_Pin;
+  /*Configure GPIO pins : ROOF_ENC_A_Pin ROOF_ENC_B_Pin */
+  GPIO_InitStruct.Pin = ROOF_ENC_A_Pin|ROOF_ENC_B_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : USART_TX_Pin USART_RX_Pin */
-  GPIO_InitStruct.Pin = USART_TX_Pin|USART_RX_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF4_USART2;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : LD2_Pin ROOF_DIR_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin|ROOF_DIR_Pin;
+  /*Configure GPIO pins : TILTING_DIR_Pin ROOF_DIR_Pin TILTING_BRAKE_Pin */
+  GPIO_InitStruct.Pin = TILTING_DIR_Pin|ROOF_DIR_Pin|TILTING_BRAKE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

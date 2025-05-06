@@ -30,7 +30,8 @@
 #define Margin 300
 
 
-extern volatile int32_t encoder;
+extern volatile int32_t roof_encoder;
+extern volatile int32_t tilting_encoder;
 
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);

@@ -9,25 +9,40 @@
 
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	uint8_t A_state = 0;
-	uint8_t B_state = 0;
+	uint8_t ROOF_A_state = 0;
+	uint8_t ROOF_B_state = 0;
+	uint8_t TILTING_A_state = 0;
+	uint8_t TILTING_B_state = 0;
 
-	if(GPIO_Pin == ENC_A_Pin) {
-		A_state = HAL_GPIO_ReadPin(ENC_A_GPIO_Port, ENC_A_Pin);
-		B_state = HAL_GPIO_ReadPin(ENC_B_GPIO_Port, ENC_B_Pin);
-		encoder += ((A_state == B_state) ? 1 : -1);
+	//Roof Motor
+	if(GPIO_Pin == ROOF_ENC_A_Pin) {
+		ROOF_A_state = HAL_GPIO_ReadPin(ROOF_ENC_A_GPIO_Port, ROOF_ENC_A_Pin);
+		ROOF_B_state = HAL_GPIO_ReadPin(ROOF_ENC_B_GPIO_Port, ROOF_ENC_B_Pin);
+		roof_encoder += ((ROOF_A_state == ROOF_B_state) ? 1 : -1);
 	}
-	if(GPIO_Pin == ENC_B_Pin) {
-		A_state = HAL_GPIO_ReadPin(ENC_A_GPIO_Port, ENC_A_Pin);
-		B_state = HAL_GPIO_ReadPin(ENC_B_GPIO_Port, ENC_B_Pin);
-		encoder += ((A_state == B_state) ? -1 : 1);
+	if(GPIO_Pin == ROOF_ENC_B_Pin) {
+		ROOF_A_state = HAL_GPIO_ReadPin(ROOF_ENC_A_GPIO_Port, ROOF_ENC_A_Pin);
+		ROOF_B_state = HAL_GPIO_ReadPin(ROOF_ENC_B_GPIO_Port, ROOF_ENC_B_Pin);
+		roof_encoder += ((ROOF_A_state == ROOF_B_state) ? -1 : 1);
+	}
+
+	//Tilting Motor
+	if(GPIO_Pin == TILTING_ENC_A_Pin) {
+		TILTING_A_state = HAL_GPIO_ReadPin(TILTING_ENC_A_GPIO_Port, TILTING_ENC_A_Pin);
+		TILTING_B_state = HAL_GPIO_ReadPin(TILTING_ENC_B_GPIO_Port, TILTING_ENC_B_Pin);
+		tilting_encoder += ((TILTING_A_state == TILTING_B_state) ? 1 : -1);
+	}
+	if(GPIO_Pin == TILTING_ENC_B_Pin) {
+		TILTING_A_state = HAL_GPIO_ReadPin(TILTING_ENC_A_GPIO_Port, TILTING_ENC_A_Pin);
+		TILTING_B_state = HAL_GPIO_ReadPin(TILTING_ENC_B_GPIO_Port, TILTING_ENC_B_Pin);
+		tilting_encoder += ((TILTING_A_state == TILTING_B_state) ? -1 : 1);
 	}
 }
 
 void Sunroof_Set(uint8_t mode) {
 	switch(mode) {
 	case OPEN:
-		if(encoder <= ROOF_OPEN_MAX) {
+		if(roof_encoder <= ROOF_OPEN_MAX) {
 			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, MOVE_SPEED);
 			HAL_GPIO_WritePin(ROOF_BRAKE_GPIO_Port, ROOF_BRAKE_Pin, 0);
 			HAL_GPIO_WritePin(ROOF_DIR_GPIO_Port, ROOF_DIR_Pin, CW);
@@ -38,7 +53,7 @@ void Sunroof_Set(uint8_t mode) {
 		}
 		break;
 	case TILTING:
-		if(encoder <= ROOF_TILTING_MAX) {
+		if(roof_encoder <= ROOF_TILTING_MAX) {
 			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, MOVE_SPEED);
 			HAL_GPIO_WritePin(ROOF_BRAKE_GPIO_Port, ROOF_BRAKE_Pin, 0);
 			HAL_GPIO_WritePin(ROOF_DIR_GPIO_Port, ROOF_DIR_Pin, CW);
@@ -49,7 +64,7 @@ void Sunroof_Set(uint8_t mode) {
 		}
 		break;
 	case CLOSE:
-		if(encoder >= ROOF_CLOSE) {
+		if(roof_encoder >= ROOF_CLOSE) {
 			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, MOVE_SPEED);
 			HAL_GPIO_WritePin(ROOF_BRAKE_GPIO_Port, ROOF_BRAKE_Pin, 0);
 			HAL_GPIO_WritePin(ROOF_DIR_GPIO_Port, ROOF_DIR_Pin, ACW);
