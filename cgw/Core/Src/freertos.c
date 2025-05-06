@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "PM25_GP2Y1023AU0F.h"
 #include "dht11.h"
+#include "event_groups.h"
 #include "mq135.h"
 /* USER CODE END Includes */
 
@@ -178,7 +179,7 @@ void StartSensorReadTask(void *argument)
     AQ_Read(aq_sensors, data->aq);
     PM_Read(&dust_sensor, &data->pm);
 
-    xEventGroupSetBits(xSensorEventGroup, DATA_READY_EVENT);
+    xEventGroupSetBits(data->xSensorEventGroup, DATA_READY_EVENT);
     osDelay(5000);
   }
   /* USER CODE END StartSensorReadTask */
