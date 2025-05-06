@@ -32,7 +32,12 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef struct
+{
+  dht11_data_t dht[2];
+  mq135_data_t aq[2];
+  float        pm;
+} sensor_data_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -108,7 +113,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+  sensor_data_t data;
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -154,13 +159,11 @@ void MX_FREERTOS_Init(void) {
 void StartSensorReadTask(void *argument)
 {
   /* USER CODE BEGIN StartSensorReadTask */
+  sensor_data_t *data = (sensor_data_t *)argument;
+
   dht11_sensor_t      dht_sensors[2];
   mq135_sensor_t      aq_sensors[2];
   sharp_dust_sensor_t dust_sensor;
-
-  dht11_data_t dht[2];
-  mq135_data_t aq[2];
-  float        pm;
 
   DHT_Init(dht_sensors);
   AQ_Init(aq_sensors);
@@ -169,9 +172,9 @@ void StartSensorReadTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    DHT_Read(dht_sensors, dht);
-    AQ_Read(aq_sensors, aq);
-    PM_Read(&dust_sensor, &pm);
+    DHT_Read(dht_sensors, data->dht);
+    AQ_Read(aq_sensors, data->aq);
+    PM_Read(&dust_sensor, &data->pm);
     osDelay(5000);
   }
   /* USER CODE END StartSensorReadTask */
