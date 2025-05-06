@@ -49,10 +49,17 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
+/* Definitions for SensorReadTask */
+osThreadId_t SensorReadTaskHandle;
+const osThreadAttr_t SensorReadTask_attributes = {
+  .name = "SensorReadTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for DataHandlerTask */
+osThreadId_t DataHandlerTaskHandle;
+const osThreadAttr_t DataHandlerTask_attributes = {
+  .name = "DataHandlerTask",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
@@ -62,7 +69,8 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void *argument);
+void StartSensorReadTask(void *argument);
+void StartDataHandlerTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -120,8 +128,11 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* creation of SensorReadTask */
+  SensorReadTaskHandle = osThreadNew(StartSensorReadTask, (void *)&data, &SensorReadTask_attributes);
+
+  /* creation of DataHandlerTask */
+  DataHandlerTaskHandle = osThreadNew(StartDataHandlerTask, (void *)&data, &DataHandlerTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -133,16 +144,16 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_StartSensorReadTask */
 /**
-  * @brief  Function implementing the defaultTask thread.
+  * @brief  Function implementing the SensorReadTask thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+/* USER CODE END Header_StartSensorReadTask */
+void StartSensorReadTask(void *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartSensorReadTask */
   dht11_sensor_t      dht_sensors[2];
   mq135_sensor_t      aq_sensors[2];
   sharp_dust_sensor_t dust_sensor;
@@ -163,7 +174,25 @@ void StartDefaultTask(void *argument)
     PM_Read(&dust_sensor, &pm);
     osDelay(5000);
   }
-  /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartSensorReadTask */
+}
+
+/* USER CODE BEGIN Header_StartDataHandlerTask */
+/**
+* @brief Function implementing the DataHandlerTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartDataHandlerTask */
+void StartDataHandlerTask(void *argument)
+{
+  /* USER CODE BEGIN StartDataHandlerTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartDataHandlerTask */
 }
 
 /* Private application code --------------------------------------------------*/
