@@ -37,12 +37,14 @@ typedef struct
   dht11_data_t dht[2];
   mq135_data_t aq[2];
   float        pm;
+
+  EventGroupHandle_t xSensorEventGroup;
 } sensor_data_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DATA_READY_EVENT (1 << 0)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -175,6 +177,8 @@ void StartSensorReadTask(void *argument)
     DHT_Read(dht_sensors, data->dht);
     AQ_Read(aq_sensors, data->aq);
     PM_Read(&dust_sensor, &data->pm);
+
+    xEventGroupSetBits(xSensorEventGroup, DATA_READY_EVENT);
     osDelay(5000);
   }
   /* USER CODE END StartSensorReadTask */
