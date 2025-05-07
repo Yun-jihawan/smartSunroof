@@ -106,9 +106,9 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-  static sensor_data_t data;
+  static sunroof_t sunroof;
 
-  data.xSensorEventGroup = xEventGroupCreate();
+  sunroof.xSensorEventGroup = xEventGroupCreate();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -129,10 +129,10 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of SensorReadTask */
-  SensorReadTaskHandle = osThreadNew(StartSensorReadTask, (void *)&data, &SensorReadTask_attributes);
+  SensorReadTaskHandle = osThreadNew(StartSensorReadTask, (void *)&sunroof, &SensorReadTask_attributes);
 
   /* creation of DataHandlerTask */
-  DataHandlerTaskHandle = osThreadNew(StartDataHandlerTask, (void *)&data, &DataHandlerTask_attributes);
+  DataHandlerTaskHandle = osThreadNew(StartDataHandlerTask, (void *)&sunroof, &DataHandlerTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -154,7 +154,8 @@ void MX_FREERTOS_Init(void) {
 void StartSensorReadTask(void *argument)
 {
   /* USER CODE BEGIN StartSensorReadTask */
-  sensor_data_t *data = (sensor_data_t *)argument;
+  sunroof_t *sunroof = (sunroof_t *)argument;
+  sensor_data_t *data = &sunroof->data;
 
   dht11_sensor_t      dht_sensors[2];
   mq135_sensor_t      aq_sensors[2];

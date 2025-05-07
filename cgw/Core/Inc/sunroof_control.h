@@ -38,9 +38,7 @@ extern uint8_t            in_out_mode;
 extern float              current_in_di;
 extern float              current_out_di;
 
-uint8_t Smart_Sunroof_Control(sensor_data_t    *data,
-                              system_state_t   *state,
-                              air_dust_level_t *air_dust_level);
+uint8_t Smart_Sunroof_Control(sunroof_t *sunroof);
 uint8_t User_Sunroof_Control(uint8_t command, uint8_t current_state);
 
 #endif /* INC_SUNROOF_CONTROL_H_ */

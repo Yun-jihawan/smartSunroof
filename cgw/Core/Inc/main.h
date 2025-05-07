@@ -35,6 +35,7 @@ extern "C" {
 #include "dht11.h"
 #include "event_groups.h"
 #include "mq135.h"
+#include "state.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -48,9 +49,15 @@ typedef struct
   uint16_t     illum;
   uint8_t      rain;
   uint8_t      velocity;
-
-  EventGroupHandle_t xSensorEventGroup;
 } sensor_data_t;
+
+typedef struct
+{
+  sensor_data_t data;
+  system_state_t state;
+  air_dust_level_t air_dust_level;
+  EventGroupHandle_t xSensorEventGroup;
+} sunroof_t;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

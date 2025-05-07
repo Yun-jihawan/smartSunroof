@@ -153,10 +153,11 @@ static void update_air_quality_states(float             aqi_in,
 }
 
 // 선루프 상태 결정 함수
-uint8_t Smart_Sunroof_Control(sensor_data_t    *data,
-                              system_state_t   *state,
-                              air_dust_level_t *air_dust_level)
+uint8_t Smart_Sunroof_Control(sunroof_t *sunroof)
 {
+    sensor_data_t  *data  = &sunroof->data;
+    system_state_t *state = &sunroof->state;
+
     uint8_t need_vent = 0; // 틸팅 되는지 확인
 
     // 1. 조도 높고 닫힘상태 아니면 닫기
