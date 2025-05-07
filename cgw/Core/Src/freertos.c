@@ -117,6 +117,8 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
   static sensor_data_t data;
+
+  data.xSensorEventGroup = xEventGroupCreate();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
