@@ -1,6 +1,7 @@
 #ifndef INC_CAR_DEVICE_CONTROL_H_
 #define INC_CAR_DEVICE_CONTROL_H_
 
+#include "dht11.h"
 #include "gpio.h"
 
 #include <stdint.h>

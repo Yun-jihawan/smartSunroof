@@ -1,8 +1,7 @@
 #ifndef INC_SUNROOF_CONTROL_H_
 #define INC_SUNROOF_CONTROL_H_
 
-#include "PM25_GP2Y1023AU0F.h"
-#include "mq135.h"
+#include "main.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -20,19 +19,6 @@ typedef struct
     float aqi_in_threshold;
 } SensingThreshold_t;
 
-typedef struct
-{
-    mq135_data_t aq[2];
-    float        pm;
-
-    int   light;
-    int   rain_detected;
-    float velocity;
-
-    uint8_t current_state;
-} SunroofInput_t;
-
-extern SunroofInput_t     sunroof_input;
 extern SensingThreshold_t thershold_input;
 extern uint8_t            in_out_mode;
 extern float              current_in_di;

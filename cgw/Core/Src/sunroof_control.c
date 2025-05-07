@@ -38,10 +38,8 @@
 
 #include "sunroof_control.h"
 
-#include "main.h"
 #include "state.h"
 
-SunroofInput_t     sunroof_input;
 SensingThreshold_t thershold_input = {.temp_threshold      = 24.0f,
                                       .humi_threshold      = 70.f,
                                       .light_threshold     = 800.0f,
@@ -173,7 +171,10 @@ uint8_t Smart_Sunroof_Control(sunroof_t *sunroof)
         Calculate_WeightedAirQualityIndex_Out(&data->aq[1], data->pm);
 
     // 공기질 및 미세먼지 상태 업데이트
-    update_air_quality_states(aqi_in, aqi_out, data->pm, &air_dust_level);
+    update_air_quality_states(aqi_in,
+                              aqi_out,
+                              data->pm,
+                              &sunroof->air_dust_level);
 
     // 2-1. 외부 공기질이 많이 나쁘면 그냥 닫기
     if (aqi_in < aqi_out && aqi_out > thershold_input.air_bad_threshold)

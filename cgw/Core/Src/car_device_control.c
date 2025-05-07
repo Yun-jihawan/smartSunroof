@@ -53,7 +53,7 @@ static void fan_on(uint8_t in_out_mode)
                       GPIO_PIN_1,
                       GPIO_PIN_RESET); // IN LOW → 릴레이 작동 → 팬 ON
 }
-static void fan_off(uint16_t in_out_mode)
+static void fan_off(uint8_t in_out_mode)
 {
     if (in_out_mode == 0)
     {
