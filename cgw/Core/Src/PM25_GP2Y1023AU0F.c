@@ -75,7 +75,7 @@ void PM_Init(sharp_dust_sensor_t *sensor)
     HAL_GPIO_Init(sensor->port, &GPIO_InitStruct);
 }
 
-void PM_Read(sharp_dust_sensor_t *sensor, float *pm)
+void PM_Read(sharp_dust_sensor_t *sensor, pm25_data_t *pm)
 {
     sharp_dust_sensor_scan(sensor);
     *pm = sensor->concentration;

@@ -3,6 +3,7 @@
 
 #include "stm32l073xx.h"
 
+typedef float pm25_data_t;
 typedef struct
 {
     GPIO_TypeDef *port;
@@ -11,6 +12,6 @@ typedef struct
 } sharp_dust_sensor_t;
 
 void PM_Init(sharp_dust_sensor_t *sensor);
-void PM_Read(sharp_dust_sensor_t *sensor, float *pm);
+void PM_Read(sharp_dust_sensor_t *sensor, pm25_data_t *pm);
 
 #endif

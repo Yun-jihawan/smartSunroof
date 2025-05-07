@@ -37,7 +37,7 @@ typedef struct
 {
   dht11_data_t dht[2];
   mq135_data_t aq[2];
-  float        pm;
+  pm25_data_t  pm;
 
   EventGroupHandle_t xSensorEventGroup;
 } sensor_data_t;
