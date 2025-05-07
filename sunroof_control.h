@@ -43,15 +43,9 @@ extern SensingThreshold_t thershold_input;
 extern uint8_t            in_out_mode;
 extern float              current_in_di;
 extern float              current_out_di;
-// 정규화 함수
-float Normalize(float value, float threshold);
 
-// 공기질 가중 합 지수 계산 함수
-
-float Calculate_WeightedAirQualityIndex_In(mq135_data_t *aq);
-float Calculate_WeightedAirQualityIndex_Out(mq135_data_t *aq, float pm);
-
-uint8_t Smart_Sunroof_Control(SunroofInput_t *input);
+uint8_t Smart_Sunroof_Control(SunroofInput_t   *input,
+                              air_dust_level_t *air_dust_level);
 uint8_t User_Sunroof_Control(uint8_t command, uint8_t current_state);
 
 #endif /* INC_SUNROOF_CONTROL_H_ */

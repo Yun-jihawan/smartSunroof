@@ -38,6 +38,8 @@
 
 #include "sunroof_control.h"
 
+#include "state.h"
+
 SunroofInput_t     sunroof_input;
 SensingThreshold_t thershold_input = {.temp_threshold      = 24.0f,
                                       .humi_threshold      = 70.f,
@@ -54,12 +56,12 @@ float current_in_di  = 0.0f;
 float current_out_di = 0.0f;
 
 // 정규화 함수
-float Normalize(float value, float threshold)
+static float Normalize(float value, float threshold)
 {
     return value / threshold;
 }
 // 공기질 가중 합 지수 계산 함수
-float Calculate_WeightedAirQualityIndex_In(mq135_data_t *aq)
+static float Calculate_WeightedAirQualityIndex_In(mq135_data_t *aq)
 {
     float normalized_benzene = Normalize(aq->benzene, 0.003f); // WHO 기준
     float normalized_co      = Normalize(aq->co, 10.0f);
@@ -69,7 +71,7 @@ float Calculate_WeightedAirQualityIndex_In(mq135_data_t *aq)
     return normalized_benzene * 0.15f + normalized_co * 0.30f
            + normalized_co2 * 0.30f + normalized_smoke * 0.25f;
 }
-float Calculate_WeightedAirQualityIndex_Out(mq135_data_t *aq, float pm)
+static float Calculate_WeightedAirQualityIndex_Out(mq135_data_t *aq, float pm)
 {
     float normalized_benzene = Normalize(aq->benzene, 0.003f); // WHO 기준
     float normalized_co      = Normalize(aq->co, 10.0f);
@@ -82,8 +84,76 @@ float Calculate_WeightedAirQualityIndex_Out(mq135_data_t *aq, float pm)
            + normalized_pm25 * 0.35;
 }
 
+static air_quality_state_t convert_aqi_to_air_quality_state(float aqi_value)
+{
+    // AQI is below good threshold (0.8)
+    if (aqi_value <= thershold_input.air_good_threshold)
+    {
+        return AIR_QUALITY_GOOD;
+    }
+    // AQI is between good (0.8) and moderate (1.0)
+    if (aqi_value <= thershold_input.air_soso_threshold)
+    {
+        return AIR_QUALITY_MODERATE;
+    }
+    // AQI is between moderate (1.0) and bad (1.2)
+    if (aqi_value <= thershold_input.air_bad_threshold)
+    {
+        return AIR_QUALITY_BAD;
+    }
+    // AQI is above bad threshold (1.2)
+    return AIR_QUALITY_VERY_BAD;
+}
+
+static dust_state_t convert_pm25_to_dust_state(float pm25_value)
+{
+    // PM2.5 is 0-15: 좋음 (Good)
+    if (pm25_value <= 15.0f)
+    {
+        return DUST_GOOD;
+    }
+    // PM2.5 is 16-25: 보통 (Moderate)
+    if (pm25_value <= 25.0f)
+    {
+        return DUST_MODERATE;
+    }
+    // PM2.5 is 26-50: 나쁨 (Bad)
+    if (pm25_value <= 50.0f)
+    {
+        return DUST_BAD;
+    }
+    // PM2.5 is 51+: 매우 나쁨 (Very Bad)
+    return DUST_VERY_BAD;
+}
+
+static void update_air_quality_states(float             aqi_in,
+                                      float             aqi_out,
+                                      float             pm25,
+                                      air_dust_level_t *air_dust_level)
+{
+    if (air_dust_level == NULL)
+    {
+        return;
+    }
+
+    // Convert AQI values to air quality states
+    air_quality_state_t internal_state =
+        convert_aqi_to_air_quality_state(aqi_in);
+    air_quality_state_t external_state =
+        convert_aqi_to_air_quality_state(aqi_out);
+
+    // Convert PM2.5 value to dust state
+    dust_state_t dust_state = convert_pm25_to_dust_state(pm25);
+
+    // Update the air_dust_level structure
+    air_dust_level->internal_air_quality_stat = internal_state;
+    air_dust_level->external_air_quality_stat = external_state;
+    air_dust_level->dust_stat                 = dust_state;
+}
+
 // 선루프 상태 결정 함수
-uint8_t Smart_Sunroof_Control(SunroofInput_t *input)
+uint8_t Smart_Sunroof_Control(SunroofInput_t   *input,
+                              air_dust_level_t *air_dust_level)
 {
     uint8_t need_vent = 0; // 틸팅 되는지 확인
 
@@ -98,6 +168,9 @@ uint8_t Smart_Sunroof_Control(SunroofInput_t *input)
     float aqi_in = Calculate_WeightedAirQualityIndex_In(&input->aq[0]);
     float aqi_out =
         Calculate_WeightedAirQualityIndex_Out(&input->aq[1], input->pm);
+
+    // 공기질 및 미세먼지 상태 업데이트
+    update_air_quality_states(aqi_in, aqi_out, input->pm, &air_dust_level);
 
     // 2-1. 외부 공기질이 많이 나쁘면 그냥 닫기
     if (aqi_in < aqi_out && aqi_out > thershold_input.air_bad_threshold)
