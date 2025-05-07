@@ -188,10 +188,31 @@ void StartSensorReadTask(void *argument)
 void StartDataHandlerTask(void *argument)
 {
   /* USER CODE BEGIN StartDataHandlerTask */
+  sunroof_t *sunroof = (sunroof_t *)argument;
+  sensor_data_t *data = &sunroof->data;
+  system_state_t *state = &sunroof->state;
+
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    // 이벤트 대기
+    xEventGroupWaitBits(data->xSensorEventGroup,
+      DATA_READY_EVENT,
+      pdTRUE, // 이벤트 비트 자동 클리어
+      pdTRUE, // 모든 비트 필요
+      portMAX_DELAY);
+
+    if (state->mode == MANUAL)
+    {
+      // user_device_command();
+      // User_Sunroof_Control();
+    }
+    else if (state->mode == SMART)
+    {
+      // smart_device_command();
+      Smart_Sunroof_Control(sunroof);
+    }
+    calculate_transparency(state->mode, data->illum, 0);
   }
   /* USER CODE END StartDataHandlerTask */
 }

@@ -42,8 +42,8 @@ typedef enum
 
 typedef enum
 {
-    USER  = 0x00U,
-    SMART = 0x01U
+    MANUAL = 0x00U,
+    SMART  = 0x01U
 } control_mode_t;
 
 typedef struct
