@@ -12,7 +12,7 @@
     * ADC : PC5
     
     이를 통한 우천 여부를 현재 <u>__PB2__</u> 를 통해 LED Output을 해둔 상태임.
-
+g
 4. 모터 구동 (Sunroof)
     * Encoder Sensing : PC0 (Sensor A), PC1 (Sensor B)
     * Motor PWM : PB3 (Tim2 Ch2)

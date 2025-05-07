@@ -73,12 +73,15 @@ volatile uint8_t rain_state = 0;
 volatile uint16_t film_opacity = 0; 	// UART를 통해 Main STM으로부터 데이터를 수신해야함
 volatile uint8_t roof_state = STOP;
 
+volatile uint32_t dbg = 0;
+
 // UART Variables
 uint8_t tx_buf[4];
 uint32_t tx_payload;
 
 uint8_t rx_buf[2];
 uint16_t rx_payload;
+uint8_t rx_ready = 0;
 
 uint8_t receive_data = 0;
 
@@ -110,15 +113,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART4) {
+    	//rx_ready = 1;
     	rx_payload = 0;
-    	rx_payload |= ((uint16_t)rx_buf[0] << 8);
-    	rx_payload |= ((uint16_t)rx_buf[1]);
+	    rx_payload |= ((uint16_t)rx_buf[0] << 8);
+	    rx_payload |= ((uint16_t)rx_buf[1]);
 
-		roof_state = ((rx_payload >> 8) & 0x03);
-		film_opacity = ((rx_payload) & 0x01);
+	    roof_state = ((rx_payload >> 8) & 0x03);
+	    film_opacity = ((rx_payload) & 0x01);
 
-        // 다시 수신 시작 (반복 수신)
-        HAL_UART_Receive_DMA(&huart4, rx_buf, 2);
+	    // 다시 수신 시작 (반복 수신)
+	    HAL_UART_Receive_DMA(&huart4, rx_buf, sizeof(rx_buf));
     }
 }
 /* USER CODE END 0 */
@@ -168,13 +172,15 @@ int main(void)
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
-  HAL_UART_Receive_DMA(&huart4, rx_buf, 2);
+  HAL_UART_Receive_DMA(&huart4, rx_buf, sizeof(rx_buf));
+
 
   // Initialize
   roof_encoder = 0;
   tilting_encoder = 0;
   roof_state = STOP;
   Sunroof_Set(STOP);
+  rx_ready = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -198,6 +204,22 @@ int main(void)
 		  Send_Sensor_Data();
 	  }
 
+	  dbg = huart4.ErrorCode;
+
+	  /*
+	  if(rx_ready)
+	  {
+		  rx_payload = 0;
+		  rx_payload |= ((uint16_t)rx_buf[0] << 8);
+		  rx_payload |= ((uint16_t)rx_buf[1]);
+
+		  roof_state = ((rx_payload >> 8) & 0x03);
+		  film_opacity = ((rx_payload) & 0x01);
+
+		  // 다시 수신 시작 (반복 수신)
+		  HAL_UART_Receive_DMA(&huart4, rx_buf, 2);
+	  }
+		*/
 	  Sunroof_Set(roof_state);
 
 	  HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, rain_state);
@@ -278,6 +300,7 @@ void Send_Sensor_Data(void) {
 	tx_buf[3] = tx_payload & 0xFF;
 
 	HAL_UART_Transmit(&huart4, tx_buf, 4, 100);
+	tx_payload = 0;
 }
 /* USER CODE END 4 */
 
