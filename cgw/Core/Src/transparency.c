@@ -1,5 +1,9 @@
 #include "transparency.h"
 
+#define MAX_TRANSPARENCY 100
+#define MIN_TRANSPARENCY 0
+#define MAX_LIGHT_LUX 2000.0f
+
 uint8_t calculate_transparency(int mode, int light_lux, int user_transparency)
 {
     uint8_t transparency = 0;
@@ -8,9 +12,9 @@ uint8_t calculate_transparency(int mode, int light_lux, int user_transparency)
     {
         // 밝기 기준은 0 ~ 2000 lux
         if (light_lux <= 0)
-            return 100; // 완전 투명
-        else if (light_lux >= 2000)
-            return 0; // 완전 불투명
+            return MAX_TRANSPARENCY; // 완전 투명
+        else if (light_lux >= MAX_LIGHT_LUX)
+            return MIN_TRANSPARENCY; // 완전 불투명
 
         // 선형적으로 맵핑 (밝을수록 불투명하게)
         float light_ratio = (float)light_lux / 2000.0f;

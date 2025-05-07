@@ -31,6 +31,9 @@ conditioner_on / conditioner_off 함수는 에어컨/히터 on/off 함수
 
 #include "state.h"
 
+#define TEMP_THRESHOLD 10.0f
+#define DISCOMFORT_INDEX_THRESHOLD 68.0f
+
 float current_in_di1;
 float current_out_di1;
 
@@ -119,7 +122,7 @@ uint8_t smart_device_command(dht11_data_t *dht, uint8_t temp_user)
 
     uint8_t season = 0; // 0 == 여름, 1 == 겨울
 
-    if (temp_out < 10.0f)
+    if (temp_out < TEMP_THRESHOLD)
     {
         season = 1; // 외부 온도가 10도보나 낮으면 히터를 사용하는 계절로 인식
 
@@ -138,7 +141,7 @@ uint8_t smart_device_command(dht11_data_t *dht, uint8_t temp_user)
     }
 
     // season이 여름으로 결정됐으므로 여름은 불쾌지수로 판단
-    else if (current_in_di1 > 68)
+    else if (current_in_di1 > DISCOMFORT_INDEX_THRESHOLD)
     {
         if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6) == GPIO_PIN_RESET)
         {
