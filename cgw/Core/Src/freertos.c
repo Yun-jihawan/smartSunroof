@@ -116,7 +116,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-  sensor_data_t data;
+  static sensor_data_t data;
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
