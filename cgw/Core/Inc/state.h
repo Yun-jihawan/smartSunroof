@@ -40,6 +40,12 @@ typedef enum
     KEEP_STATE     = 10
 } roof_state_t;
 
+typedef enum
+{
+    USER  = 0x00U,
+    SMART = 0x01U
+} control_mode_t;
+
 typedef struct
 {
     air_quality_state_t internal_air_quality_state;
@@ -49,6 +55,7 @@ typedef struct
 
 typedef struct
 {
+    control_mode_t      mode;
     roof_state_t        roof;
     uint8_t             transparency;
     aircond_state_t     airconditioner;
