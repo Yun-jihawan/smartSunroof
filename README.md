@@ -18,7 +18,7 @@
     * Motor PWM : PB3 (Tim2 Ch2)
     * Motor DIR : PA6
     * Motor Brake : PC7
-    * Encoder Sensing : PB0 (Sensor A), PB1 (Sensor B)
+    * Encoder Sensing : PB10 (Sensor A), PB11 (Sensor B)
     * Motor PWM : PA7 (Tim3 Ch2)
     * Motor DIR : PA5
     * Motor Brake : PA9

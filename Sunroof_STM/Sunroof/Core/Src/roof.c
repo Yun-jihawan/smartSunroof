@@ -22,19 +22,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		ROOF_B_state = HAL_GPIO_ReadPin(ROOF_ENC_B_GPIO_Port, ROOF_ENC_B_Pin);
 		roof_encoder += ((ROOF_A_state == ROOF_B_state) ? 1 : -1);
 	}
-	if(GPIO_Pin == ROOF_ENC_B_Pin) {
+	else if(GPIO_Pin == ROOF_ENC_B_Pin) {
 		ROOF_A_state = HAL_GPIO_ReadPin(ROOF_ENC_A_GPIO_Port, ROOF_ENC_A_Pin);
 		ROOF_B_state = HAL_GPIO_ReadPin(ROOF_ENC_B_GPIO_Port, ROOF_ENC_B_Pin);
 		roof_encoder += ((ROOF_A_state == ROOF_B_state) ? -1 : 1);
 	}
-
 	//Tilting Motor
-	if(GPIO_Pin == TILTING_ENC_A_Pin) {
+	else if(GPIO_Pin == TILTING_ENC_A_Pin) {
 		TILTING_A_state = HAL_GPIO_ReadPin(TILTING_ENC_A_GPIO_Port, TILTING_ENC_A_Pin);
 		TILTING_B_state = HAL_GPIO_ReadPin(TILTING_ENC_B_GPIO_Port, TILTING_ENC_B_Pin);
 		tilting_encoder += ((TILTING_A_state == TILTING_B_state) ? 1 : -1);
 	}
-	if(GPIO_Pin == TILTING_ENC_B_Pin) {
+	else if(GPIO_Pin == TILTING_ENC_B_Pin) {
 		TILTING_A_state = HAL_GPIO_ReadPin(TILTING_ENC_A_GPIO_Port, TILTING_ENC_A_Pin);
 		TILTING_B_state = HAL_GPIO_ReadPin(TILTING_ENC_B_GPIO_Port, TILTING_ENC_B_Pin);
 		tilting_encoder += ((TILTING_A_state == TILTING_B_state) ? -1 : 1);
@@ -45,8 +44,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 void Sunroof_Set(uint8_t mode) {
 	switch(mode) {
 	case OPEN:
-		if(tilting_encoder >= 0)
-		{
+		if(tilting_encoder >= 0){
 			// STOP Roof Motor
 			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 			HAL_GPIO_WritePin(ROOF_BRAKE_GPIO_Port, ROOF_BRAKE_Pin, 1);
