@@ -31,20 +31,28 @@ typedef enum
     VENTILATION_ON  = 0x01U
 } ventilation_state_t;
 
+typedef enum
+{
+    SUNROOF_CLOSED = 0,
+    SUNROOF_TILT   = 1,
+    SUNROOF_OPEN   = 2,
+    SUNROOF_STOP   = 3,
+    KEEP_STATE     = 10
+} roof_state_t;
+
 typedef struct
 {
-    uint8_t internal_air_quality_stat;
-    uint8_t external_air_quality_stat;
-    uint8_t dust_stat;
+    air_quality_state_t internal_air_quality_state;
+    air_quality_state_t external_air_quality_state;
+    dust_state_t        dust_state;
 } air_dust_level_t;
 
 typedef struct
 {
-    uint8_t sunroof_stat;     // 0: 닫힘, 1: 열림
-    uint8_t transparency;     // 0 ~ 100 (%)
-    uint8_t airconditioner;   // 0: OFF, 1: ON
-    uint8_t ventilation_mode; // 0: OFF, 1: ON
-    uint8_t velocity;         // 속도
-} state_cgw_to_pi_t;
+    roof_state_t        roof;
+    uint8_t             transparency;
+    aircond_state_t     airconditioner;
+    ventilation_state_t ventilation;
+} system_state_t;
 
 #endif /* STATE_H_ */

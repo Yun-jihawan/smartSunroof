@@ -38,6 +38,7 @@
 
 #include "sunroof_control.h"
 
+#include "main.h"
 #include "state.h"
 
 SunroofInput_t     sunroof_input;
@@ -146,31 +147,32 @@ static void update_air_quality_states(float             aqi_in,
     dust_state_t dust_state = convert_pm25_to_dust_state(pm25);
 
     // Update the air_dust_level structure
-    air_dust_level->internal_air_quality_stat = internal_state;
-    air_dust_level->external_air_quality_stat = external_state;
-    air_dust_level->dust_stat                 = dust_state;
+    air_dust_level->internal_air_quality_state = internal_state;
+    air_dust_level->external_air_quality_state = external_state;
+    air_dust_level->dust_state                 = dust_state;
 }
 
 // 선루프 상태 결정 함수
-uint8_t Smart_Sunroof_Control(SunroofInput_t   *input,
+uint8_t Smart_Sunroof_Control(sensor_data_t    *data,
+                              system_state_t   *state,
                               air_dust_level_t *air_dust_level)
 {
     uint8_t need_vent = 0; // 틸팅 되는지 확인
 
     // 1. 조도 높고 닫힘상태 아니면 닫기
-    if (input->light > thershold_input.light_threshold
-        && input->current_state != SUNROOF_CLOSED)
+    if (data->illum > thershold_input.light_threshold
+        && state->roof != SUNROOF_CLOSED)
     {
         need_vent = 0;
     }
 
     // 2. 공기질 평가
-    float aqi_in = Calculate_WeightedAirQualityIndex_In(&input->aq[0]);
+    float aqi_in = Calculate_WeightedAirQualityIndex_In(&data->aq[0]);
     float aqi_out =
-        Calculate_WeightedAirQualityIndex_Out(&input->aq[1], input->pm);
+        Calculate_WeightedAirQualityIndex_Out(&data->aq[1], data->pm);
 
     // 공기질 및 미세먼지 상태 업데이트
-    update_air_quality_states(aqi_in, aqi_out, input->pm, &air_dust_level);
+    update_air_quality_states(aqi_in, aqi_out, data->pm, &air_dust_level);
 
     // 2-1. 외부 공기질이 많이 나쁘면 그냥 닫기
     if (aqi_in < aqi_out && aqi_out > thershold_input.air_bad_threshold)
@@ -186,28 +188,28 @@ uint8_t Smart_Sunroof_Control(SunroofInput_t   *input,
     }
     // 2-3. 내부 공기질과 외부 공기질이 차이가 적으면 닫기
     if (aqi_in - aqi_out <= 0.2f && aqi_in - aqi_out >= -0.2f
-        && input->current_state != SUNROOF_CLOSED)
+        && state->roof != SUNROOF_CLOSED)
     {
         in_out_mode = 0; // 내기모드
         need_vent   = 0; // 닫기
     }
     // 3. 고속 주행 시 무조건 닫힘
-    if (input->velocity > thershold_input.velocity_threshold
-        && input->current_state != SUNROOF_CLOSED)
+    if (data->velocity > thershold_input.velocity_threshold
+        && state->roof != SUNROOF_CLOSED)
     {
         return SUNROOF_CLOSED;
     }
     // 4. 비가 올때 상황
-    if (input->rain_detected)
+    if (data->rain)
     {
         in_out_mode = 0; // 내기모드
         // 4-1. 속력이 30km/h 미만이면 닫힘
-        if (input->velocity < 30.0f && input->current_state != SUNROOF_CLOSED)
+        if (data->velocity < 30.0f && state->roof != SUNROOF_CLOSED)
         {
             return SUNROOF_CLOSED;
         }
         // 4-2. 속력이 30km/h 이상이면 틸팅
-        if (input->velocity >= 30.0f && input->current_state == SUNROOF_CLOSED)
+        if (data->velocity >= 30.0f && state->roof == SUNROOF_CLOSED)
         {
             need_vent = 1;
         }
@@ -223,7 +225,7 @@ uint8_t Smart_Sunroof_Control(SunroofInput_t   *input,
         return SUNROOF_CLOSED;
     }
     // 6. 아무 조건도 해당 안 되면 현상태 유지
-    return input->current_state;
+    return state->roof;
 }
 
 uint8_t User_Sunroof_Control(uint8_t command, uint8_t current_state)

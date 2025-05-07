@@ -7,12 +7,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define SUNROOF_CLOSED 0
-#define SUNROOF_TILT   1
-#define SUNROOF_OPEN   2
-#define SUNROOF_STOP   3
-#define KEEP_STATE     10
-
 typedef struct
 {
     float temp_threshold;
@@ -44,7 +38,8 @@ extern uint8_t            in_out_mode;
 extern float              current_in_di;
 extern float              current_out_di;
 
-uint8_t Smart_Sunroof_Control(SunroofInput_t   *input,
+uint8_t Smart_Sunroof_Control(sensor_data_t    *data,
+                              system_state_t   *state,
                               air_dust_level_t *air_dust_level);
 uint8_t User_Sunroof_Control(uint8_t command, uint8_t current_state);
 

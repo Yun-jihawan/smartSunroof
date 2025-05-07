@@ -29,15 +29,17 @@ conditioner_on / conditioner_off 함수는 에어컨/히터 on/off 함수
 
 #include "car_device_control.h"
 
+#include "state.h"
+
 float current_in_di1;
 float current_out_di1;
 
-float calculate_discomfort_index(float temperature, float humidity)
+static float calculate_discomfort_index(float temperature, float humidity)
 {
     return (0.81f * temperature
             + 0.01f * humidity * (0.99f * temperature - 14.3f) + 46.3f);
 }
-void fan_on(uint8_t in_out_mode)
+static void fan_on(uint8_t in_out_mode)
 {
     if (in_out_mode == 0)
     {
@@ -51,7 +53,7 @@ void fan_on(uint8_t in_out_mode)
                       GPIO_PIN_1,
                       GPIO_PIN_RESET); // IN LOW → 릴레이 작동 → 팬 ON
 }
-void fan_off(uint16_t in_out_mode)
+static void fan_off(uint16_t in_out_mode)
 {
     if (in_out_mode == 0)
     {
@@ -65,16 +67,16 @@ void fan_off(uint16_t in_out_mode)
                       GPIO_PIN_1,
                       GPIO_PIN_SET); // IN HIGH → 릴레이 끊김 → 팬 OFF
 }
-void conditioner_on(uint16_t GPIO_Pin)
+static void conditioner_on(uint16_t GPIO_Pin)
 {
     HAL_GPIO_WritePin(GPIOA, GPIO_Pin, GPIO_PIN_SET);
 }
 
-void conditioner_off(uint16_t GPIO_Pin)
+static void conditioner_off(uint16_t GPIO_Pin)
 {
     HAL_GPIO_WritePin(GPIOA, GPIO_Pin, GPIO_PIN_RESET);
 }
-void operation_conditioner(uint8_t season, uint8_t operate, float temp)
+static void operation_conditioner(uint8_t season, uint8_t operate, float temp)
 {
     if (season == 0)
     {
@@ -101,16 +103,19 @@ void operation_conditioner(uint8_t season, uint8_t operate, float temp)
         }
     }
 }
-uint8_t smart_device_command(float temp_in,
-                             float temp_out,
-                             float temp_user,
-                             float humi_in,
-                             float humi_out)
+uint8_t smart_device_command(dht11_data_t *dht, uint8_t temp_user)
 {
+    float temp_in  = dht[0].temp; // 내부 온도
+    float humi_in  = dht[0].rh;   // 내부 습도
+    float temp_out = dht[1].temp; // 외부 온도
+    float humi_out = dht[1].rh;   // 외부 습도
+
+    // 불쾌지수 계산
     current_in_di1 =
         calculate_discomfort_index(temp_in, humi_in); // 현재 내부 불쾌지수
     current_out_di1 =
-        calculate_discomfort_index(temp_out, humi_out); // 현재 외부 불쾌지수
+        calculate_discomfort_index(temp_out,
+                                   humi_out); // 현재 외부 불쾌지수
 
     uint8_t season = 0; // 0 == 여름, 1 == 겨울
 
@@ -123,8 +128,8 @@ uint8_t smart_device_command(float temp_in,
         if (temp_in < temp_user)
         {
             if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7)
-                == GPIO_PIN_RESET) // 온도가 낮은데 히터가 안켜져 있으면 히터
-                                   // 키기
+                == GPIO_PIN_RESET) // 온도가 낮은데 히터가 안켜져 있으면
+                                   // 히터 키기
             {
                 operation_conditioner(season, 1, temp_user);
                 return season;

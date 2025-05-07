@@ -25,22 +25,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "PM25_GP2Y1023AU0F.h"
-#include "dht11.h"
-#include "event_groups.h"
-#include "mq135.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef struct
-{
-  dht11_data_t dht[2];
-  mq135_data_t aq[2];
-  pm25_data_t  pm;
 
-  EventGroupHandle_t xSensorEventGroup;
-} sensor_data_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
