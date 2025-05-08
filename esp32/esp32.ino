@@ -28,12 +28,12 @@ uint8_t targetBrightnessValue = 0;  // NUCLEO로부터 수신한 목표 밝기 �
 uint8_t lastSentBrightnessValue = 0;// 마지막으로 BLE 전송한 밝기 값
 
 unsigned long lastSendTime = 0;     // 마지막 BLE 전송 시간
-const long sendInterval = 500;      // BLE 전송 간격 (밀리초) - 필요시 조정
+const long sendInterval = 10;      // BLE 전송 간격 (밀리초) - 필요시 조정
 
 // 점진적 밝기 변경을 위한 변수
 const uint8_t brightnessChangeStep = 1;     // 한 번에 변경할 밝기 단계 (1이 가장 부드러움)
 unsigned long lastBrightnessUpdateTime = 0;   // 마지막 밝기 점진적 변경 시간
-const long brightnessUpdateInterval = 20;   // 밝기 점진적 변경 간격 (밀리초) - 값이 작을수록 부드럽지만 CPU 사용량 증가
+const long brightnessUpdateInterval = 10;   // 밝기 점진적 변경 간격 (밀리초) - 값이 작을수록 부드럽지만 CPU 사용량 증가
 
 // --- BLE Server Callbacks ---
 // 클라이언트 연결/해제 시 호출될 콜백 클래스
