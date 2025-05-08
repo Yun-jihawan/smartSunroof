@@ -16,7 +16,7 @@
 // NUCLEO 보드의 시리얼 TX 핀 -> ESP32의 RX2 핀 (GPIO 16)
 // NUCLEO 보드의 시리얼 RX 핀 -> ESP32의 TX2 핀 (GPIO 17)
 // NUCLEO 보드와 ESP32의 GND를 서로 연결해야 합니다.
-#define NUCLEO_SERIAL_BAUD_RATE 9600 // NUCLEO 보드의 시리얼 통신 속도와 일치시켜야 함
+#define NUCLEO_SERIAL_BAUD_RATE 115200 // NUCLEO 보드의 시리얼 통신 속도와 일치시켜야 함
 HardwareSerial NucleoSerial(2); // Use Serial2 (UART2)
 
 // --- Global Variables ---
