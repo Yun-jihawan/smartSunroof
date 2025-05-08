@@ -101,16 +101,25 @@ void loop() {
 
   // 1. NUCLEO 보드로부터 시리얼 데이터 수신 확인
   if (NucleoSerial.available() > 0) {
-    // NUCLEO가 1바이트 밝기 값(0-255)을 보낸다고 가정
+    // NUCLEO가 1바이트 밝기 값을 보낸다고 가정
     uint8_t receivedValue = NucleoSerial.read();
 
-    // TODO: NUCLEO가 다른 형식(예: 문자열)으로 데이터를 보낸다면 여기서 파싱 로직 수정 필요
-    // 예: 여러 바이트를 읽어 숫자로 변환하거나, 특정 구분자까지 읽기 등
+    // [0, 100] 범위 내에 있는지 확인
+    if (receivedValue <= 100) {
+      // [0, 100] 범위의 값을 [0, 255] 범위로 매핑
+      uint8_t mappedValue = map(receivedValue, 0, 100, 0, 255);
 
-    if (receivedValue != targetBrightnessValue) { // 목표값이 변경된 경우에만 업데이트
-        targetBrightnessValue = receivedValue; // 수신한 값으로 목표 밝기 값 업데이트
-        Serial.print("Received from Nucleo (Target Brightness): ");
+      if (mappedValue != targetBrightnessValue) { // 목표값이 변경된 경우에만 업데이트
+        targetBrightnessValue = mappedValue;
+        Serial.print("Received from Nucleo (Original [0-100]): ");
+        Serial.println(receivedValue);
+        Serial.print("Mapped to [0-255]: ");
         Serial.println(targetBrightnessValue);
+      }
+    } else {
+      // 범위를 벗어난 값은 무시
+      Serial.print("Ignored out-of-range brightness value: ");
+      Serial.println(receivedValue);
     }
   }
 
