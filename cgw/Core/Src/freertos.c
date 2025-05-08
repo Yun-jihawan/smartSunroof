@@ -25,22 +25,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "PM25_GP2Y1023AU0F.h"
-#include "dht11.h"
-#include "event_groups.h"
-#include "mq135.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef struct
-{
-  dht11_data_t dht[2];
-  mq135_data_t aq[2];
-  pm25_data_t  pm;
 
-  EventGroupHandle_t xSensorEventGroup;
-} sensor_data_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -116,9 +106,9 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-  static sensor_data_t data;
+  static sunroof_t sunroof;
 
-  data.xSensorEventGroup = xEventGroupCreate();
+  sunroof.xSensorEventGroup = xEventGroupCreate();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -139,10 +129,10 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of SensorReadTask */
-  SensorReadTaskHandle = osThreadNew(StartSensorReadTask, (void *)&data, &SensorReadTask_attributes);
+  SensorReadTaskHandle = osThreadNew(StartSensorReadTask, (void *)&sunroof, &SensorReadTask_attributes);
 
   /* creation of DataHandlerTask */
-  DataHandlerTaskHandle = osThreadNew(StartDataHandlerTask, (void *)&data, &DataHandlerTask_attributes);
+  DataHandlerTaskHandle = osThreadNew(StartDataHandlerTask, (void *)&sunroof, &DataHandlerTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -164,7 +154,8 @@ void MX_FREERTOS_Init(void) {
 void StartSensorReadTask(void *argument)
 {
   /* USER CODE BEGIN StartSensorReadTask */
-  sensor_data_t *data = (sensor_data_t *)argument;
+  sunroof_t *sunroof = (sunroof_t *)argument;
+  sensor_data_t *data = &sunroof->data;
 
   dht11_sensor_t      dht_sensors[2];
   mq135_sensor_t      aq_sensors[2];
@@ -197,10 +188,31 @@ void StartSensorReadTask(void *argument)
 void StartDataHandlerTask(void *argument)
 {
   /* USER CODE BEGIN StartDataHandlerTask */
+  sunroof_t *sunroof = (sunroof_t *)argument;
+  sensor_data_t *data = &sunroof->data;
+  system_state_t *state = &sunroof->state;
+
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    // 이벤트 대기
+    xEventGroupWaitBits(data->xSensorEventGroup,
+      DATA_READY_EVENT,
+      pdTRUE, // 이벤트 비트 자동 클리어
+      pdTRUE, // 모든 비트 필요
+      portMAX_DELAY);
+
+    if (state->mode == MANUAL)
+    {
+      // user_device_command();
+      // User_Sunroof_Control();
+    }
+    else if (state->mode == SMART)
+    {
+      // smart_device_command();
+      Smart_Sunroof_Control(sunroof);
+    }
+    calculate_transparency(state->mode, data->illum, 0);
   }
   /* USER CODE END StartDataHandlerTask */
 }
