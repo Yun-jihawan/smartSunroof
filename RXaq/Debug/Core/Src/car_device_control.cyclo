@@ -1,0 +1,8 @@
+../Core/Src/car_device_control.c:15:7:calculate_discomfort_index	1
+../Core/Src/car_device_control.c:18:6:fan_on	1
+../Core/Src/car_device_control.c:31:6:fan_off	1
+../Core/Src/car_device_control.c:43:6:conditioner_on	1
+../Core/Src/car_device_control.c:50:6:conditioner_off	1
+../Core/Src/car_device_control.c:55:6:operation_conditioner	4
+../Core/Src/car_device_control.c:88:9:smart_device_command	6
+../Core/Src/car_device_control.c:143:6:user_device_command	1
