@@ -33,7 +33,6 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include "PM25_GP2Y1023AU0F.h"
 #include "dht11.h"
-#include "event_groups.h"
 #include "mq135.h"
 #include "state.h"
 /* USER CODE END Includes */
@@ -56,7 +55,6 @@ typedef struct
   sensor_data_t data;
   system_state_t state;
   air_dust_level_t air_dust_level;
-  EventGroupHandle_t xSensorEventGroup;
 } sunroof_t;
 /* USER CODE END ET */
 

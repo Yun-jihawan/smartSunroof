@@ -25,7 +25,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "car_device_control.h"
+#include "event_groups.h"
+#include "sunroof_control.h"
+#include "transparency.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +48,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+static EventGroupHandle_t xSensorEventGroup;
 /* USER CODE END Variables */
 /* Definitions for SensorReadTask */
 osThreadId_t SensorReadTaskHandle;
@@ -108,7 +111,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
   static sunroof_t sunroof;
 
-  sunroof.xSensorEventGroup = xEventGroupCreate();
+  xSensorEventGroup = xEventGroupCreate();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -172,7 +175,7 @@ void StartSensorReadTask(void *argument)
     AQ_Read(aq_sensors, data->aq);
     PM_Read(&dust_sensor, &data->pm);
 
-    xEventGroupSetBits(data->xSensorEventGroup, DATA_READY_EVENT);
+    xEventGroupSetBits(xSensorEventGroup, DATA_READY_EVENT);
     osDelay(5000);
   }
   /* USER CODE END StartSensorReadTask */
@@ -196,18 +199,18 @@ void StartDataHandlerTask(void *argument)
   for(;;)
   {
     // 이벤트 대기
-    xEventGroupWaitBits(data->xSensorEventGroup,
+    xEventGroupWaitBits(xSensorEventGroup,
       DATA_READY_EVENT,
       pdTRUE, // 이벤트 비트 자동 클리어
       pdTRUE, // 모든 비트 필요
       portMAX_DELAY);
 
-    if (state->mode == MANUAL)
+    if (state->mode == MODE_MANUAL)
     {
       // user_device_command();
       // User_Sunroof_Control();
     }
-    else if (state->mode == SMART)
+    else if (state->mode == MODE_SMART)
     {
       // smart_device_command();
       Smart_Sunroof_Control(sunroof);
