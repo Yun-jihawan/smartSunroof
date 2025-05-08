@@ -113,8 +113,8 @@ void loop() {
         targetBrightnessValue = mappedValue;
         Serial.print("Received from Nucleo (Original [0-100]): ");
         Serial.println(receivedValue);
-        Serial.print("Mapped to [0-255]: ");
-        Serial.println(targetBrightnessValue);
+        // Serial.print("Mapped to [0-255]: ");
+        // Serial.println(targetBrightnessValue);
       }
     } else {
       // 범위를 벗어난 값은 무시
@@ -141,8 +141,8 @@ void loop() {
           currentBrightnessValue = targetBrightnessValue;
         }
       }
-      Serial.print("Current Brightness (Smooth): "); // 디버깅용: 점진적 변경 값 출력
-      Serial.println(currentBrightnessValue);
+      // Serial.print("Current Brightness (Smooth): "); // 디버깅용: 점진적 변경 값 출력
+      // Serial.println(currentBrightnessValue);
     }
     lastBrightnessUpdateTime = currentTime;
   }
@@ -157,8 +157,8 @@ void loop() {
       // 3.2 BLE 알림 전송
       pCharacteristic->notify();
 
-      Serial.print("Brightness Sent via BLE: ");
-      Serial.println(currentBrightnessValue);
+      // Serial.print("Brightness Sent via BLE: ");
+      // Serial.println(currentBrightnessValue);
 
       lastSentBrightnessValue = currentBrightnessValue; // 마지막 전송 값 업데이트
       lastSendTime = currentTime; // 마지막 전송 시간 업데이트
