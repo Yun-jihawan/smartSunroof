@@ -22,10 +22,18 @@ HardwareSerial NucleoSerial(2); // Use Serial2 (UART2)
 // --- Global Variables ---
 BLECharacteristic *pCharacteristic; // BLE 특성 객체
 bool deviceConnected = false;       // 클라이언트 연결 상태 플래그
-uint8_t currentBrightnessValue = 0; // NUCLEO로부터 수신한 현재 밝기 값
+
+uint8_t currentBrightnessValue = 0; // 현재 밝기 값 (점진적으로 변경될 값)
+uint8_t targetBrightnessValue = 0;  // NUCLEO로부터 수신한 목표 밝기 값
 uint8_t lastSentBrightnessValue = 0;// 마지막으로 BLE 전송한 밝기 값
-unsigned long lastSendTime = 0;     // 마지막 전송 시간
+
+unsigned long lastSendTime = 0;     // 마지막 BLE 전송 시간
 const long sendInterval = 500;      // BLE 전송 간격 (밀리초) - 필요시 조정
+
+// 점진적 밝기 변경을 위한 변수
+const uint8_t brightnessChangeStep = 1;     // 한 번에 변경할 밝기 단계 (1이 가장 부드러움)
+unsigned long lastBrightnessUpdateTime = 0;   // 마지막 밝기 점진적 변경 시간
+const long brightnessUpdateInterval = 20;   // 밝기 점진적 변경 간격 (밀리초) - 값이 작을수록 부드럽지만 CPU 사용량 증가
 
 // --- BLE Server Callbacks ---
 // 클라이언트 연결/해제 시 호출될 콜백 클래스
@@ -48,10 +56,9 @@ class MyServerCallbacks: public BLEServerCallbacks {
 // 초기화 코드 (한 번 실행)
 void setup() {
   Serial.begin(115200); // 시리얼 모니터용 (디버깅)
-  Serial.println("Starting ESP32 BLE Sender (Receiving from Nucleo)");
+  Serial.println("Starting ESP32 BLE Sender (Receiving from Nucleo with Gradual Brightness)");
 
   // NUCLEO 보드와 통신할 시리얼 포트(Serial2) 초기화
-  // NucleoSerial.begin(NUCLEO_SERIAL_BAUD_RATE); // 기본 핀 (RX=16, TX=17) 사용 시
   NucleoSerial.begin(NUCLEO_SERIAL_BAUD_RATE, SERIAL_8N1, 16, 17); // 핀 명시적 지정 (RX, TX)
   Serial.println("Serial2 initialized for Nucleo communication.");
 
@@ -90,6 +97,8 @@ void setup() {
 // --- Loop ---
 // 반복 실행 코드
 void loop() {
+  unsigned long currentTime = millis(); // 현재 시간 캐싱
+
   // 1. NUCLEO 보드로부터 시리얼 데이터 수신 확인
   if (NucleoSerial.available() > 0) {
     // NUCLEO가 1바이트 밝기 값(0-255)을 보낸다고 가정
@@ -98,22 +107,45 @@ void loop() {
     // TODO: NUCLEO가 다른 형식(예: 문자열)으로 데이터를 보낸다면 여기서 파싱 로직 수정 필요
     // 예: 여러 바이트를 읽어 숫자로 변환하거나, 특정 구분자까지 읽기 등
 
-    currentBrightnessValue = receivedValue; // 수신한 값으로 현재 밝기 값 업데이트
-
-    // 디버깅: 수신된 값 출력
-    Serial.print("Received from Nucleo: ");
-    Serial.println(currentBrightnessValue);
+    if (receivedValue != targetBrightnessValue) { // 목표값이 변경된 경우에만 업데이트
+        targetBrightnessValue = receivedValue; // 수신한 값으로 목표 밝기 값 업데이트
+        Serial.print("Received from Nucleo (Target Brightness): ");
+        Serial.println(targetBrightnessValue);
+    }
   }
 
-  // 2. BLE 클라이언트(안드로이드 앱)가 연결되어 있는지 확인
+  // 2. 밝기 값 점진적으로 변경
+  if (currentTime - lastBrightnessUpdateTime >= brightnessUpdateInterval) {
+    if (currentBrightnessValue != targetBrightnessValue) {
+      if (currentBrightnessValue < targetBrightnessValue) {
+        // 목표값까지의 차이가 step보다 크거나 같으면 step만큼 증가
+        if (targetBrightnessValue - currentBrightnessValue >= brightnessChangeStep) {
+          currentBrightnessValue += brightnessChangeStep;
+        } else { // 차이가 step보다 작으면 목표값으로 바로 설정 (오버슈팅 방지)
+          currentBrightnessValue = targetBrightnessValue;
+        }
+      } else { // currentBrightnessValue > targetBrightnessValue
+        // 목표값까지의 차이가 step보다 크거나 같으면 step만큼 감소
+        if (currentBrightnessValue - targetBrightnessValue >= brightnessChangeStep) {
+          currentBrightnessValue -= brightnessChangeStep;
+        } else { // 차이가 step보다 작으면 목표값으로 바로 설정 (언더슈팅 방지)
+          currentBrightnessValue = targetBrightnessValue;
+        }
+      }
+      Serial.print("Current Brightness (Smooth): "); // 디버깅용: 점진적 변경 값 출력
+      Serial.println(currentBrightnessValue);
+    }
+    lastBrightnessUpdateTime = currentTime;
+  }
+
+  // 3. BLE 클라이언트(안드로이드 앱)가 연결되어 있는지 확인
   if (deviceConnected) {
-    unsigned long currentTime = millis();
-    // 마지막 전송 후 일정 시간이 지났고, 값이 변경되었는지 확인
+    // 마지막 전송 후 일정 시간이 지났고, 현재 밝기 값이 마지막으로 전송한 값과 다른 경우
     if ((currentTime - lastSendTime >= sendInterval) && (currentBrightnessValue != lastSentBrightnessValue)) {
-      // 3. BLE 특성 값 설정
+      // 3.1 BLE 특성 값 설정
       pCharacteristic->setValue(&currentBrightnessValue, 1); // 1 바이트 데이터 설정
 
-      // 4. BLE 알림 전송
+      // 3.2 BLE 알림 전송
       pCharacteristic->notify();
 
       Serial.print("Brightness Sent via BLE: ");
@@ -125,5 +157,8 @@ void loop() {
   }
 
   // 짧은 딜레이 추가 (CPU 사용량 감소 및 다른 작업 처리 시간 확보)
+  // 점진적 밝기 변경 로직이 brightnessUpdateInterval에 따라 실행되므로,
+  // 이 delay는 해당 간격보다 짧거나 비슷하게 유지하는 것이 좋습니다.
+  // 너무 길면 밝기 변경이 끊겨 보일 수 있습니다.
   delay(10);
 }
