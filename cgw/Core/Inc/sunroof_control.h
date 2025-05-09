@@ -19,7 +19,7 @@ typedef struct
     float aqi_in_threshold;
 } SensingThreshold_t;
 
-extern SensingThreshold_t thershold_input;
+extern SensingThreshold_t threshold_input;
 extern uint8_t            in_out_mode;
 extern float              current_in_di;
 extern float              current_out_di;

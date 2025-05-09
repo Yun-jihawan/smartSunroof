@@ -135,8 +135,8 @@ uint8_t smart_device_command(dht11_data_t *dht, uint8_t temp_user)
                                    // 히터 키기
             {
                 operation_conditioner(season, 1, temp_user);
-                return season;
             }
+            return 1;
         }
     }
 
@@ -146,10 +146,10 @@ uint8_t smart_device_command(dht11_data_t *dht, uint8_t temp_user)
         if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6) == GPIO_PIN_RESET)
         {
             operation_conditioner(season, 1, temp_user);
-            return season;
         }
+        return 1;
     }
-    return KEEP_STATE;
+    return 0;
 }
 
 void user_device_command(uint8_t season, uint8_t operate, uint8_t temp_user)

@@ -29,6 +29,7 @@
 #include "event_groups.h"
 #include "sunroof_control.h"
 #include "transparency.h"
+#include "uart_cgw_rpi.h"
 #include "usart.h"
 /* USER CODE END Includes */
 
@@ -51,8 +52,13 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+// CGW-SUN
 static uint8_t rx_buf[4];
 static uint8_t tx_data[2];
+
+// CGW-RPI
+static uint8_t rx_data[5];
+// static ThresholdData_from_rpi_t thresholdData;
 
 static sunroof_t sunroof;
 static EventGroupHandle_t xSensorEventGroup;
@@ -150,7 +156,8 @@ static void Send_Sunroof_Command_CGW_to_RPI(system_state_t *state)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+  sunroof.state.mode = MODE_SMART;
+  HAL_UART_Receive_DMA(&huart4, rx_data, 5);
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -223,7 +230,7 @@ void StartSensorReadTask(void *argument)
     // SUN에 나한테 데이터 보내라고 요청
     HAL_UART_Transmit(&huart1, tx_request, sizeof(tx_request), 100);
 
-    osDelay(10000);
+    osDelay(5000);
   }
   /* USER CODE END StartSensorReadTask */
 }
@@ -240,6 +247,7 @@ void StartDataHandlerTask(void *argument)
   /* USER CODE BEGIN StartDataHandlerTask */
   sensor_data_t *data = &sunroof.data;
   system_state_t *state = &sunroof.state;
+  air_dust_level_t *air_dust_level = &sunroof.air_dust_level;
 
   /* Infinite loop */
   for(;;)
@@ -250,20 +258,23 @@ void StartDataHandlerTask(void *argument)
       pdTRUE, // 이벤트 비트 자동 클리어
       pdTRUE, // 모든 비트 필요
       portMAX_DELAY);
+    
+    send_sensor_data(data->dht, air_dust_level);
 
+    state->transparency = calculate_transparency(state->mode, data->illum, 0);
     if (state->mode == MODE_MANUAL)
     {
       // user_device_command();
-      // User_Sunroof_Control();
+      // state->roof = User_Sunroof_Control();
     }
     else if (state->mode == MODE_SMART)
     {
-      // smart_device_command();
-      Smart_Sunroof_Control(&sunroof);
-    }
-    calculate_transparency(state->mode, data->illum, 0);
+      state->airconditioner = smart_device_command(data->dht, threshold_input.temp_threshold);
+      state->roof = Smart_Sunroof_Control(&sunroof);
 
-    Send_Sunroof_Command_CGW_to_RPI(state);
+      send_device_state(&sunroof);
+      Send_Sunroof_Command_CGW_to_RPI(state);
+    }
   }
   /* USER CODE END StartDataHandlerTask */
 }
@@ -272,12 +283,73 @@ void StartDataHandlerTask(void *argument)
 /* USER CODE BEGIN Application */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+  sensor_data_t *data = &sunroof.data;
+  system_state_t *state = &sunroof.state;
+
   if (huart->Instance == USART1)
   {
     Receive_Sensor_Data_SUN_to_CGW(rx_buf);
     xEventGroupSetBits(xSensorEventGroup, SUN_DATA_READY_EVENT);
 
     HAL_UART_Receive_DMA(&huart1, rx_buf, sizeof(rx_buf));
+  }
+  else if (huart->Instance == USART4)
+  {
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+#if (DEBUG_LEVEL > 0)
+    uint8_t debug_msg[5];
+
+    sprintf((char *)debug_msg,
+            "%d %d %d %d %d\r\n",
+            rx_data[0],
+            rx_data[1],
+            rx_data[2],
+            rx_data[3],
+            rx_data[4]);
+
+    printf("identifier: %d\r\n", rx_data[0]);
+#endif
+    int identifier = rx_data[0];
+
+    switch (identifier)
+    {
+    case THRES_IDENTIFIER:
+      threshold_input.temp_threshold = rx_data[1];
+      // thresholdData.air_quality_threshold = rx_data[2];
+      // thresholdData.dust_threshold = rx_data[3];
+      threshold_input.light_threshold = rx_data[4];
+      break;
+    case CONTROL_IDENTIFIER:
+      state->roof = rx_data[1];
+      state->transparency = rx_data[2];
+      state->airconditioner = rx_data[3];
+      state->mode = RECEIVED_MASK & rx_data[4]; // 사용자 모드이면 안보내기
+#if (DEBUG_LEVEL > 0)
+      printf("received : %d\r\n", controlData.mode);
+#endif
+      break;
+    default:
+#if (DEBUG_LEVEL > 0)
+      // 에러 처리: 잘못된 식별자
+      const char *err_msg = "ERR: Invalid identifier\r\n";
+      HAL_UART_Transmit(&huart2,
+                        (uint8_t *)err_msg,
+                        strlen(err_msg),
+                        100);
+#endif
+      // 예시: 에러 LED 점등 (e.g., GPIOA Pin 5)
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+
+      // 필요 시: 에러 카운트 증가, 무시, 로그 저장 등
+      break;
+    }
+
+#if (DEBUG_LEVEL > 0)
+    // 받은 데이터를 다시 전송 (Echo)
+    HAL_UART_Transmit(&huart2, debug_msg, strlen((char *)debug_msg), 100);
+#endif
+    // 다시 수신 대기 (인터럽트 재등록)
+    HAL_UART_Receive_DMA(&huart4, rx_data, sizeof(rx_data));
   }
 }
 

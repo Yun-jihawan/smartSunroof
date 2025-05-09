@@ -1,9 +1,0 @@
-../Core/Src/main.c:85:5:__io_putchar	1
-../Core/Src/main.c:94:6:init_rand	1
-../Core/Src/main.c:99:6:HAL_UART_RxCpltCallback	2
-../Core/Src/main.c:126:5:main	1
-../Core/Src/main.c:350:6:SystemClock_Config	4
-../Core/Src/main.c:396:6:Send_Sunroof_Command_CGW_to_RPI	1
-../Core/Src/main.c:400:6:Receive_Sensor_Data_SUN_to_CGW	1
-../Core/Src/main.c:412:6:HAL_UART_TxCpltCallback	2
-../Core/Src/main.c:426:6:Error_Handler	1

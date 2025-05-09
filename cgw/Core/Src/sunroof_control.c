@@ -40,7 +40,7 @@
 
 #include "state.h"
 
-SensingThreshold_t thershold_input = {.temp_threshold      = 24.0f,
+SensingThreshold_t threshold_input = {.temp_threshold      = 24.0f,
                                       .humi_threshold      = 70.f,
                                       .light_threshold     = 800.0f,
                                       .velocity_threshold  = 60.0f,
@@ -86,17 +86,17 @@ static float Calculate_WeightedAirQualityIndex_Out(mq135_data_t *aq, float pm)
 static air_quality_state_t convert_aqi_to_air_quality_state(float aqi_value)
 {
     // AQI is below good threshold (0.8)
-    if (aqi_value <= thershold_input.air_good_threshold)
+    if (aqi_value <= threshold_input.air_good_threshold)
     {
         return AIR_QUALITY_GOOD;
     }
     // AQI is between good (0.8) and moderate (1.0)
-    if (aqi_value <= thershold_input.air_soso_threshold)
+    if (aqi_value <= threshold_input.air_soso_threshold)
     {
         return AIR_QUALITY_MODERATE;
     }
     // AQI is between moderate (1.0) and bad (1.2)
-    if (aqi_value <= thershold_input.air_bad_threshold)
+    if (aqi_value <= threshold_input.air_bad_threshold)
     {
         return AIR_QUALITY_BAD;
     }
@@ -159,7 +159,7 @@ uint8_t Smart_Sunroof_Control(sunroof_t *sunroof)
     uint8_t need_vent = 0; // 틸팅 되는지 확인
 
     // 1. 조도 높고 닫힘상태 아니면 닫기
-    if (data->illum > thershold_input.light_threshold
+    if (data->illum > threshold_input.light_threshold
         && state->roof != SUNROOF_CLOSED)
     {
         need_vent = 0;
@@ -177,7 +177,7 @@ uint8_t Smart_Sunroof_Control(sunroof_t *sunroof)
                               &sunroof->air_dust_level);
 
     // 2-1. 외부 공기질이 많이 나쁘면 그냥 닫기
-    if (aqi_in < aqi_out && aqi_out > thershold_input.air_bad_threshold)
+    if (aqi_in < aqi_out && aqi_out > threshold_input.air_bad_threshold)
     {
         in_out_mode = 0; // 내기모드
         return SUNROOF_CLOSED;
@@ -196,7 +196,7 @@ uint8_t Smart_Sunroof_Control(sunroof_t *sunroof)
         need_vent   = 0; // 닫기
     }
     // 3. 고속 주행 시 무조건 닫힘
-    if (data->velocity > thershold_input.velocity_threshold
+    if (data->velocity > threshold_input.velocity_threshold
         && state->roof != SUNROOF_CLOSED)
     {
         return SUNROOF_CLOSED;
