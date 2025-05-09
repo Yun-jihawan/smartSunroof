@@ -16,6 +16,7 @@
 #include "gpio.h"
 
 #define MOVE_SPEED 70
+
 #define CLOSE 0
 #define TILTING 1
 #define OPEN 2

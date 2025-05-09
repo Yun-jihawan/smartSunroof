@@ -1,7 +1,8 @@
-../Core/Src/main.c:104:6:HAL_TIM_PeriodElapsedCallback	2
-../Core/Src/main.c:113:6:HAL_UART_RxCpltCallback	2
-../Core/Src/main.c:134:5:main	2
-../Core/Src/main.c:239:6:SystemClock_Config	4
-../Core/Src/main.c:285:13:MX_NVIC_Init	1
-../Core/Src/main.c:296:6:Send_Sensor_Data	1
-../Core/Src/main.c:311:6:Error_Handler	1
+../Core/Src/main.c:110:5:__io_putchar	1
+../Core/Src/main.c:116:6:HAL_UART_RxCpltCallback	2
+../Core/Src/main.c:129:5:main	4
+../Core/Src/main.c:232:6:SystemClock_Config	4
+../Core/Src/main.c:279:13:MX_NVIC_Init	1
+../Core/Src/main.c:287:6:Send_Data_CGW	1
+../Core/Src/main.c:304:6:Send_Data_SPD	1
+../Core/Src/main.c:315:6:Error_Handler	1

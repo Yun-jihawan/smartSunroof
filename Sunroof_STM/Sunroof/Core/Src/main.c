@@ -39,16 +39,22 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define RAIN_PERIOD 10
-
 #define CLOSE 0
 #define TILTING 1
 #define OPEN 2
 #define STOP 3
 
-#define AUTO_MODE 0
-#define USER_MODE 1
+#define IN_ILLUM_SHIFT     20
+#define OUT_ILLUM_SHIFT    8
+#define RAIN_STATE_SHIFT   7
+#define ROOF_STATE_SHIFT   5
+#define FILM_OPACITY_SHIFT 0
 
+#define IN_ILLUM_MASK      0x0FFF
+#define OUT_ILLUM_MASK     0x0FFF
+#define RAIN_STATE_MASK    0x01
+#define ROOF_STATE_MASK    0x03
+#define FILM_OPACITY_MASK  0x1F
 
 /* USER CODE END PD */
 
@@ -70,18 +76,18 @@ volatile uint16_t rain_sense;
 volatile uint8_t rain_state = 0;
 
 // UART Receive Data
-volatile uint16_t film_opacity = 0; 	// UART를 통해 Main STM으로부터 데이터를 수신해야함
+volatile uint8_t film_opacity = 0; 	// X 5 해서 사용
 volatile uint8_t roof_state = STOP;
 
-volatile uint32_t dbg = 0;
-
 // UART Variables
-uint8_t tx_buf[4];
-uint32_t tx_payload;
+uint8_t SPD_tx_payload;
 
-uint8_t rx_buf[2];
-uint16_t rx_payload;
-uint8_t rx_ready = 0;
+uint8_t CGW_tx_buf[4];
+uint32_t CGW_tx_payload;
+
+uint8_t CGW_rx_buf[2];
+uint16_t CGW_rx_payload;
+uint8_t CGW_rx_ready = 0;
 
 uint8_t receive_data = 0;
 
@@ -94,35 +100,24 @@ uint8_t sensor_read = 0;
 void SystemClock_Config(void);
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
-void Send_Sensor_Data(void);
+void Send_Data_CGW(void);
+void Send_Data_SPD(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-// 1 Second Timer
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	if(htim->Instance == TIM7)
-	{
-		sensor_read = 1;
-	}
+int __io_putchar(int ch) {
+    HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
+    return ch;
 }
 
 // UART RX
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if (huart->Instance == USART4) {
-    	//rx_ready = 1;
-    	rx_payload = 0;
-	    rx_payload |= ((uint16_t)rx_buf[0] << 8);
-	    rx_payload |= ((uint16_t)rx_buf[1]);
-
-	    roof_state = ((rx_payload >> 8) & 0x03);
-	    film_opacity = ((rx_payload) & 0x01);
-
-	    // 다시 수신 시작 (반복 수신)
-	    HAL_UART_Receive_DMA(&huart4, rx_buf, sizeof(rx_buf));
+    if (huart->Instance == USART1) {
+    	CGW_rx_ready = 1;
+    	HAL_UART_Receive_DMA(&huart1, CGW_rx_buf, sizeof(CGW_rx_buf));
     }
 }
 /* USER CODE END 0 */
@@ -158,29 +153,29 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC_Init();
-  MX_TIM7_Init();
   MX_TIM2_Init();
-  MX_USART4_UART_Init();
   MX_USART2_UART_Init();
   MX_TIM3_Init();
   MX_USART5_UART_Init();
+  MX_USART1_UART_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim7);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
-  HAL_UART_Receive_DMA(&huart4, rx_buf, sizeof(rx_buf));
-
+  HAL_UART_Receive_DMA(&huart1, CGW_rx_buf, sizeof(CGW_rx_buf));
 
   // Initialize
   roof_encoder = 0;
   tilting_encoder = 0;
   roof_state = STOP;
-  Sunroof_Set(STOP);
-  rx_ready = 0;
+  film_opacity = 0;
+  CGW_rx_ready = 0;
+  sensor_read = 0;
+
+  printf("#BOOT\r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -190,41 +185,39 @@ int main(void)
 	  // 센서 값 수신 및 UART 송신
 	  if(sensor_read)
 	  {
-		  read_illum();
-		  read_rain();
-
 		  sensor_read = 0;
 
-		  //UART Send
-		  tx_payload = 0;
-		  tx_payload |= ((uint32_t)in_illum & 0x0FFF) << 20;  // In Illum : 12 -> 32 - 12 = 20
-		  tx_payload |= ((uint32_t)out_illum & 0x0FFF) << 8;   // Out Illum : 12 -> 20 - 12 = 8
-		  tx_payload |= (rain_state & 0x01) << 7;               // rain_flag : 1 0 -> 8 - 1 = 7
+		  read_illum();
+		  read_rain();
+		  Send_Data_CGW();
 
-		  Send_Sensor_Data();
+		  printf("#SEND\r\n in : %d, out : %d, rain : %d, roof : %d, opacity : %d\r\n", \
+				  (int)in_illum, (int)out_illum, (int)rain_state, (int)roof_state, (int)film_opacity);
 	  }
 
-	  dbg = huart4.ErrorCode;
-
-	  /*
-	  if(rx_ready)
+	  if(CGW_rx_ready)
 	  {
-		  rx_payload = 0;
-		  rx_payload |= ((uint16_t)rx_buf[0] << 8);
-		  rx_payload |= ((uint16_t)rx_buf[1]);
+		  CGW_rx_ready = 0;
 
-		  roof_state = ((rx_payload >> 8) & 0x03);
-		  film_opacity = ((rx_payload) & 0x01);
+		  CGW_rx_payload = 0;
+		  CGW_rx_payload |= ((uint16_t)CGW_rx_buf[0] << 8);
+		  CGW_rx_payload |= ((uint16_t)CGW_rx_buf[1]);
 
-		  // 다시 수신 시작 (반복 수신)
-		  HAL_UART_Receive_DMA(&huart4, rx_buf, 2);
+		  if(CGW_rx_payload == 0xFFFF) {
+			  sensor_read = 1;
+
+			  printf("#REQUEST\r\n");
+		  }
+		  else {
+			  roof_state = ((CGW_rx_payload >> 8) & 0x03);
+			  film_opacity = ((CGW_rx_payload) & 0x1F);
+			  Send_Data_SPD();
+
+			  printf("#RECEIVE\r\n roof : %d, opacity : %d\r\n", (int)roof_state, (int)film_opacity);
+		  }
 	  }
-		*/
+
 	  Sunroof_Set(roof_state);
-
-	  HAL_GPIO_WritePin(IS_RAIN_GPIO_Port, IS_RAIN_Pin, rain_state);
-	  HAL_GPIO_WritePin(OPACITY_GPIO_Port, OPACITY_Pin, film_opacity);
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -270,7 +263,8 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2;
+  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
@@ -287,20 +281,30 @@ static void MX_NVIC_Init(void)
   /* EXTI0_1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(EXTI0_1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
-  /* TIM7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(TIM7_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(TIM7_IRQn);
 }
 
 /* USER CODE BEGIN 4 */
-void Send_Sensor_Data(void) {
-	tx_buf[0] = (tx_payload >> 24) & 0xFF;
-	tx_buf[1] = (tx_payload >> 16) & 0xFF;
-	tx_buf[2] = (tx_payload >> 8) & 0xFF;
-	tx_buf[3] = tx_payload & 0xFF;
+void Send_Data_CGW(void) {
+	//UART Send
+	CGW_tx_payload = 0;
+	CGW_tx_payload |= ((uint32_t)(in_illum & IN_ILLUM_MASK)) << IN_ILLUM_SHIFT;
+	CGW_tx_payload |= ((uint32_t)(out_illum & OUT_ILLUM_MASK)) << OUT_ILLUM_SHIFT;
+	CGW_tx_payload |= ((uint32_t)(rain_state & RAIN_STATE_MASK)) << RAIN_STATE_SHIFT;
+	CGW_tx_payload |= ((uint32_t)(roof_state & ROOF_STATE_MASK)) << ROOF_STATE_SHIFT;
+	CGW_tx_payload |= ((uint32_t)(film_opacity & FILM_OPACITY_MASK)) << FILM_OPACITY_SHIFT;
 
-	HAL_UART_Transmit(&huart4, tx_buf, 4, 100);
-	tx_payload = 0;
+	CGW_tx_buf[0] = (CGW_tx_payload >> 24) & 0xFF;
+	CGW_tx_buf[1] = (CGW_tx_payload >> 16) & 0xFF;
+	CGW_tx_buf[2] = (CGW_tx_payload >> 8) & 0xFF;
+	CGW_tx_buf[3] = CGW_tx_payload & 0xFF;
+
+	HAL_UART_Transmit(&huart1, CGW_tx_buf, sizeof(CGW_tx_buf), 100);
+}
+
+void Send_Data_SPD(void) {
+	SPD_tx_payload = (uint8_t)(film_opacity * 5);
+
+	HAL_UART_Transmit(&huart5, &SPD_tx_payload, 1, 100);
 }
 /* USER CODE END 4 */
 
