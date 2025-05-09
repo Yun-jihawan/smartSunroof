@@ -47,7 +47,12 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+extern volatile uint8_t rx_sensor_sun;   // STM_SUN으로부터 데이터 받았는지 확인하는 변수
+extern uint8_t sunroof_command;          // STM_SUN으로 보내는 선루프 제어 명령
+extern uint8_t sunroof_state_sun;        // STM_SUN으로 부터 받아오는 선루프 상태 값
+extern uint8_t sunroof_transparency;     // STM_SUN으로 보내는 선루프 투명도 제어 명령
+extern char tx_data[2];
+extern uint8_t transparency;
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
