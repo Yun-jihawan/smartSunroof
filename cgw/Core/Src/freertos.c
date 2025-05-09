@@ -157,7 +157,8 @@ static void Send_Sunroof_Command_CGW_to_RPI(system_state_t *state)
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
   sunroof.state.mode = MODE_SMART;
-  HAL_UART_Receive_DMA(&huart4, rx_data, 5);
+  HAL_UART_Receive_DMA(&huart1, rx_buf, sizeof(rx_buf));
+  HAL_UART_Receive_DMA(&huart4, rx_data, sizeof(rx_data));
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -230,7 +231,7 @@ void StartSensorReadTask(void *argument)
     // SUN에 나한테 데이터 보내라고 요청
     HAL_UART_Transmit(&huart1, tx_request, sizeof(tx_request), 100);
 
-    osDelay(5000);
+    osDelay(10000);
   }
   /* USER CODE END StartSensorReadTask */
 }
@@ -295,10 +296,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   }
   else if (huart->Instance == USART4)
   {
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 #if (DEBUG_LEVEL > 0)
     uint8_t debug_msg[5];
-
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
     sprintf((char *)debug_msg,
             "%d %d %d %d %d\r\n",
             rx_data[0],
@@ -306,7 +306,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             rx_data[2],
             rx_data[3],
             rx_data[4]);
-
     printf("identifier: %d\r\n", rx_data[0]);
 #endif
     int identifier = rx_data[0];
@@ -336,10 +335,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
                         (uint8_t *)err_msg,
                         strlen(err_msg),
                         100);
-#endif
       // 예시: 에러 LED 점등 (e.g., GPIOA Pin 5)
       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-
+#endif
       // 필요 시: 에러 카운트 증가, 무시, 로그 저장 등
       break;
     }
