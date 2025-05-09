@@ -10,3 +10,7 @@ class AirConditionState(Enum):
     IN_OFF_OUT_ON = 1
     IN_ON_OUT_OFF = 2
     IN_ON_OUT_ON = 3
+
+class GeneralState(Enum):
+    OFF = 0
+    ON = 1
