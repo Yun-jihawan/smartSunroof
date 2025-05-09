@@ -1,0 +1,5 @@
+../Core/Src/sunroof_control.c:34:7:Normalize	1
+../Core/Src/sunroof_control.c:38:7:Calculate_WeightedAirQualityIndex_In	1
+../Core/Src/sunroof_control.c:49:7:Calculate_WeightedAirQualityIndex_Out	1
+../Core/Src/sunroof_control.c:64:9:Smart_Sunroof_Control	18
+../Core/Src/sunroof_control.c:137:9:User_Sunroof_Control	4
