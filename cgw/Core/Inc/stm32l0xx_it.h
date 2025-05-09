@@ -48,6 +48,7 @@
 /* Exported functions prototypes ---------------------------------------------*/
 void NMI_Handler(void);
 void HardFault_Handler(void);
+void DMA1_Channel2_3_IRQHandler(void);
 void USART4_5_IRQHandler(void);
 void TIM7_IRQHandler(void);
 void USART1_IRQHandler(void);
