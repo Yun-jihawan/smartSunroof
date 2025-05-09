@@ -29,6 +29,7 @@
 #include "event_groups.h"
 #include "sunroof_control.h"
 #include "transparency.h"
+#include "usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +49,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+static uint8_t rx_sensor_sun = 0;
 static EventGroupHandle_t xSensorEventGroup;
 /* USER CODE END Variables */
 /* Definitions for SensorReadTask */
@@ -171,9 +173,11 @@ void StartSensorReadTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
+    __disable_irq();
     DHT_Read(dht_sensors, data->dht);
     AQ_Read(aq_sensors, data->aq);
     PM_Read(&dust_sensor, &data->pm);
+    __enable_irq();
 
     xEventGroupSetBits(xSensorEventGroup, DATA_READY_EVENT);
     osDelay(5000);
@@ -222,6 +226,19 @@ void StartDataHandlerTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART1)
+    {
+        Receive_Sensor_Data_SUN_to_CGW(rx_buf);
+       	rx_sensor_sun = 1;  // 센서 값 수신 완료
+       	HAL_UART_Receive_DMA(&huart1, rx_buf, sizeof(rx_buf));
+    }
+}
 
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+
+}
 /* USER CODE END Application */
 
