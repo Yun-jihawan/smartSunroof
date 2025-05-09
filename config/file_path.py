@@ -9,6 +9,7 @@ ICONS_DIR = os.path.join(BASE_DIR, "resources", "icons")
 # JSON FILE PATH
 SETTING_FILE = os.path.join(JSON_DIR, "setting.json")
 PRESET_FILE = os.path.join(JSON_DIR, "preset.json")
+WEATHER_FILE = os.path.join(JSON_DIR, "weather.json")
 
 # ICONS FILE PATH
 WEATHER_ICON_FILES = {

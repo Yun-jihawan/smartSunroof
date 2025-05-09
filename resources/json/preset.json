@@ -1,22 +1,22 @@
 [
     {
         "id": 1,
-        "PS_TEMP": 18.0,
-        "PS_AQL": 3,
-        "PS_DDL": 1,
-        "PS_BRL": 0
+        "PS_TEMP": 23,
+        "PS_AQL": 0,
+        "PS_DDL": 2,
+        "PS_BRL": 2
     },
     {
         "id": 2,
-        "PS_TEMP": 16.0,
-        "PS_AQL": 2,
-        "PS_DDL": 0,
-        "PS_BRL": 0
+        "PS_TEMP": 16,
+        "PS_AQL": 3,
+        "PS_DDL": 3,
+        "PS_BRL": 3
     },
     {
         "id": 3,
-        "PS_TEMP": 18.0,
-        "PS_AQL": 1,
+        "PS_TEMP": 25,
+        "PS_AQL": 3,
         "PS_DDL": 2,
         "PS_BRL": 0
     }
