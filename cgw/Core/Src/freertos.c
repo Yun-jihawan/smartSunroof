@@ -39,7 +39,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define DATA_READY_EVENT (1 << 0)
+#define CGW_DATA_READY_EVENT (1 << 0)
+#define SUN_DATA_READY_EVENT (1 << 1)
+#define ALL_DATA_READY_EVENT (CGW_DATA_READY_EVENT | SUN_DATA_READY_EVENT)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,7 +51,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-static uint8_t rx_sensor_sun = 0;
+static uint8_t rx_buf[4];
+static uint8_t tx_data[2];
+
+static sunroof_t sunroof;
 static EventGroupHandle_t xSensorEventGroup;
 /* USER CODE END Variables */
 /* Definitions for SensorReadTask */
@@ -102,6 +107,40 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
    called if a stack overflow is detected. */
 }
+
+static void Receive_Sensor_Data_SUN_to_CGW(uint8_t *rx_buffer)
+{
+  sensor_data_t *data = &sunroof.data;
+  system_state_t *state = &sunroof.state;
+  uint32_t payload = (rx_buffer[0] << 24) | (rx_buffer[1] << 16) | (rx_buffer[2] << 8) | rx_buffer[3];
+
+  // data->illum[IN] = (payload >> 20) & 0x0FFF;
+  // data->illum[OUT] = (payload >> 8) & 0x0FFF;
+  data->illum = (payload >> 8) & 0x0FFF;
+  data->rain = (payload >> 7) & 0x01;
+  state->roof = (payload >> 5) & 0x03;
+  state->transparency = (payload) & 0x1F;
+
+#if (DEBUG_LEVEL > 0)
+  char msg[64];
+  sprintf(msg,
+          "In: %u, Out: %u, Rain: %u \r\n",
+          in_illum,
+          out_illum,
+          rain_flag);
+  printf("%s\r\n", msg);
+#endif
+}
+
+static void Send_Sunroof_Command_CGW_to_RPI(system_state_t *state)
+{
+  tx_data[0] = state->roof + '0';
+  tx_data[1] = state->transparency;
+  HAL_UART_Transmit(&huart4, tx_data, sizeof(tx_data), 100);
+#if (DEBUG_LEVEL > 0)
+  printf("Send command %s \r\n", tx_data);
+#endif
+}
 /* USER CODE END 4 */
 
 /**
@@ -111,9 +150,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-  static sunroof_t sunroof;
 
-  xSensorEventGroup = xEventGroupCreate();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -134,10 +171,10 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of SensorReadTask */
-  SensorReadTaskHandle = osThreadNew(StartSensorReadTask, (void *)&sunroof, &SensorReadTask_attributes);
+  SensorReadTaskHandle = osThreadNew(StartSensorReadTask, NULL, &SensorReadTask_attributes);
 
   /* creation of DataHandlerTask */
-  DataHandlerTaskHandle = osThreadNew(StartDataHandlerTask, (void *)&sunroof, &DataHandlerTask_attributes);
+  DataHandlerTaskHandle = osThreadNew(StartDataHandlerTask, NULL, &DataHandlerTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -145,6 +182,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
+  xSensorEventGroup = xEventGroupCreate();
   /* USER CODE END RTOS_EVENTS */
 
 }
@@ -159,11 +197,12 @@ void MX_FREERTOS_Init(void) {
 void StartSensorReadTask(void *argument)
 {
   /* USER CODE BEGIN StartSensorReadTask */
-  sunroof_t *sunroof = (sunroof_t *)argument;
-  sensor_data_t *data = &sunroof->data;
+  const uint8_t tx_request[2] = {0xFF, 0xFF};
 
-  dht11_sensor_t      dht_sensors[2];
-  mq135_sensor_t      aq_sensors[2];
+  sensor_data_t *data = &sunroof.data;
+
+  dht11_sensor_t dht_sensors[2];
+  mq135_sensor_t aq_sensors[2];
   sharp_dust_sensor_t dust_sensor;
 
   DHT_Init(dht_sensors);
@@ -179,8 +218,12 @@ void StartSensorReadTask(void *argument)
     PM_Read(&dust_sensor, &data->pm);
     __enable_irq();
 
-    xEventGroupSetBits(xSensorEventGroup, DATA_READY_EVENT);
-    osDelay(5000);
+    xEventGroupSetBits(xSensorEventGroup, CGW_DATA_READY_EVENT);
+
+    // SUN에 나한테 데이터 보내라고 요청
+    HAL_UART_Transmit(&huart1, tx_request, sizeof(tx_request), 100);
+
+    osDelay(10000);
   }
   /* USER CODE END StartSensorReadTask */
 }
@@ -195,16 +238,15 @@ void StartSensorReadTask(void *argument)
 void StartDataHandlerTask(void *argument)
 {
   /* USER CODE BEGIN StartDataHandlerTask */
-  sunroof_t *sunroof = (sunroof_t *)argument;
-  sensor_data_t *data = &sunroof->data;
-  system_state_t *state = &sunroof->state;
+  sensor_data_t *data = &sunroof.data;
+  system_state_t *state = &sunroof.state;
 
   /* Infinite loop */
   for(;;)
   {
     // 이벤트 대기
     xEventGroupWaitBits(xSensorEventGroup,
-      DATA_READY_EVENT,
+      ALL_DATA_READY_EVENT,
       pdTRUE, // 이벤트 비트 자동 클리어
       pdTRUE, // 모든 비트 필요
       portMAX_DELAY);
@@ -217,9 +259,11 @@ void StartDataHandlerTask(void *argument)
     else if (state->mode == MODE_SMART)
     {
       // smart_device_command();
-      Smart_Sunroof_Control(sunroof);
+      Smart_Sunroof_Control(&sunroof);
     }
     calculate_transparency(state->mode, data->illum, 0);
+
+    Send_Sunroof_Command_CGW_to_RPI(state);
   }
   /* USER CODE END StartDataHandlerTask */
 }
@@ -228,12 +272,13 @@ void StartDataHandlerTask(void *argument)
 /* USER CODE BEGIN Application */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if (huart->Instance == USART1)
-    {
-        Receive_Sensor_Data_SUN_to_CGW(rx_buf);
-       	rx_sensor_sun = 1;  // 센서 값 수신 완료
-       	HAL_UART_Receive_DMA(&huart1, rx_buf, sizeof(rx_buf));
-    }
+  if (huart->Instance == USART1)
+  {
+    Receive_Sensor_Data_SUN_to_CGW(rx_buf);
+    xEventGroupSetBits(xSensorEventGroup, SUN_DATA_READY_EVENT);
+
+    HAL_UART_Receive_DMA(&huart1, rx_buf, sizeof(rx_buf));
+  }
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)

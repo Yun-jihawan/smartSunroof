@@ -164,10 +164,10 @@ void AQ_Init(mq135_sensor_t *sensors)
 
 void AQ_Read(mq135_sensor_t *sensors, mq135_data_t *data)
 {
-    mq135_sensor_t *hmq_in       = &sensors[0];
-    mq135_sensor_t *hmq_out      = &sensors[1];
-    mq135_data_t   *hmq_data_in  = &data[0];
-    mq135_data_t   *hmq_data_out = &data[1];
+    mq135_sensor_t *hmq_in       = &sensors[IN];
+    mq135_sensor_t *hmq_out      = &sensors[OUT];
+    mq135_data_t   *hmq_data_in  = &data[IN];
+    mq135_data_t   *hmq_data_out = &data[OUT];
 
     hmq_data_in->benzene = MQ135_GetPPM(hmq_in) / 10.000;
     hmq_data_in->co      = MQ135_GetCO(hmq_in) / 9.00;

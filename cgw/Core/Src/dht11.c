@@ -107,22 +107,22 @@ static void DHT11_Init(dht11_sensor_t *sensor, GPIO_TypeDef *port, uint16_t pin)
 
 void DHT_Init(dht11_sensor_t *sensors)
 {
-    DHT11_Init(&sensors[0], DHT11_INTERNAL_GPIO_Port, DHT11_INTERNAL_Pin);
-    DHT11_Init(&sensors[1], DHT11_EXTERNAL_GPIO_Port, DHT11_EXTERNAL_Pin);
+    DHT11_Init(&sensors[IN], DHT11_INTERNAL_GPIO_Port, DHT11_INTERNAL_Pin);
+    DHT11_Init(&sensors[OUT], DHT11_EXTERNAL_GPIO_Port, DHT11_EXTERNAL_Pin);
 }
 
 void DHT_Read(dht11_sensor_t *sensors, dht11_data_t *data)
 {
-    dht11_sensor_t *internal = &sensors[0];
-    dht11_sensor_t *external = &sensors[1];
+    dht11_sensor_t *internal = &sensors[IN];
+    dht11_sensor_t *external = &sensors[OUT];
 
     DHT11_Read_Data(internal);
     DHT11_Read_Data(external);
 
-    data[0].rh   = internal->Rh_byte1;
-    data[0].temp = internal->Temp_byte1;
-    data[1].rh   = external->Rh_byte1;
-    data[1].temp = external->Temp_byte1;
+    data[IN].rh   = internal->Rh_byte1;
+    data[IN].temp = internal->Temp_byte1;
+    data[OUT].rh   = external->Rh_byte1;
+    data[OUT].temp = external->Temp_byte1;
 
 #if (DEBUG_LEVEL > 0)
     printf("\r\n=== DHT Sensor ===\r\n");

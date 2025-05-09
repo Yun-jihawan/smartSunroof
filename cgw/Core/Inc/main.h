@@ -65,7 +65,8 @@ typedef struct
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+#define IN 0
+#define OUT 1
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
