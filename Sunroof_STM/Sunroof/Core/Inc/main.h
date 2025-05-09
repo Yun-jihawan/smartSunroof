@@ -82,8 +82,6 @@ void Error_Handler(void);
 #define ROOF_DIR_GPIO_Port GPIOA
 #define RAIN_Pin GPIO_PIN_5
 #define RAIN_GPIO_Port GPIOC
-#define IS_RAIN_Pin GPIO_PIN_2
-#define IS_RAIN_GPIO_Port GPIOB
 #define TILTING_ENC_A_Pin GPIO_PIN_10
 #define TILTING_ENC_A_GPIO_Port GPIOB
 #define TILTING_ENC_A_EXTI_IRQn EXTI4_15_IRQn
@@ -92,8 +90,6 @@ void Error_Handler(void);
 #define TILTING_ENC_B_EXTI_IRQn EXTI4_15_IRQn
 #define ROOF_BRAKE_Pin GPIO_PIN_7
 #define ROOF_BRAKE_GPIO_Port GPIOC
-#define OPACITY_Pin GPIO_PIN_8
-#define OPACITY_GPIO_Port GPIOC
 #define TILTING_BRAKE_Pin GPIO_PIN_9
 #define TILTING_BRAKE_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13

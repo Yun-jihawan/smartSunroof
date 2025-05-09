@@ -2,7 +2,7 @@
 
 ### 작업 완료
 2. 조도 센서 값 수신 (timer 10s)
-    * Analog Read Inside : PA1 / Outside : PA0
+    * Analog Read Inside : PA1(A1) / Outside : PA0(A0)
     
     조사 결과 10k ohm 저항 사용하는것이 적절한(?) 값이라고 하나, 현재 1K만 있어서 사용중임임
     
@@ -18,6 +18,7 @@ g
     * Motor PWM : PB3 (Tim2 Ch2)
     * Motor DIR : PA6
     * Motor Brake : PC7
+    
     * Encoder Sensing : PB10 (Sensor A), PB11 (Sensor B)
     * Motor PWM : PA7 (Tim3 Ch2)
     * Motor DIR : PA5
