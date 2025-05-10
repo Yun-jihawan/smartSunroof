@@ -42,7 +42,9 @@
 /* USER CODE BEGIN PD */
 #define CGW_DATA_READY_EVENT (1 << 0)
 #define SUN_DATA_READY_EVENT (1 << 1)
-#define ALL_DATA_READY_EVENT (CGW_DATA_READY_EVENT | SUN_DATA_READY_EVENT)
+#define USER_DATA_READY_EVENT (1 << 2)
+#define SENSOR_DATA_READY_EVENT (CGW_DATA_READY_EVENT | SUN_DATA_READY_EVENT)
+#define ANY_DATA_READY_EVENT (SENSOR_DATA_READY_EVENT | USER_DATA_READY_EVENT)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -125,7 +127,7 @@ static void Receive_Sensor_Data_SUN_to_CGW(uint8_t *rx_buffer)
   data->illum = (payload >> 8) & 0x0FFF;
   data->rain = (payload >> 7) & 0x01;
   state->roof = (payload >> 5) & 0x03;
-  state->transparency = (payload) & 0x1F;
+  // state->transparency = (payload) & 0x1F;
 
 #if (DEBUG_LEVEL > 0)
   char msg[64];
@@ -138,11 +140,11 @@ static void Receive_Sensor_Data_SUN_to_CGW(uint8_t *rx_buffer)
 #endif
 }
 
-static void Send_Sunroof_Command_CGW_to_RPI(system_state_t *state)
+static void Send_Sunroof_Command_CGW_to_SUN(system_state_t *state)
 {
   tx_data[0] = state->roof + '0';
-  tx_data[1] = state->transparency;
-  HAL_UART_Transmit(&huart4, tx_data, sizeof(tx_data), 100);
+  tx_data[1] = state->transparency / 5;
+  HAL_UART_Transmit(&huart1, tx_data, sizeof(tx_data), 100);
 #if (DEBUG_LEVEL > 0)
   printf("Send command %s \r\n", tx_data);
 #endif
@@ -250,32 +252,48 @@ void StartDataHandlerTask(void *argument)
   system_state_t *state = &sunroof.state;
   air_dust_level_t *air_dust_level = &sunroof.air_dust_level;
 
+  EventBits_t uxBits;
+
   /* Infinite loop */
   for(;;)
   {
     // 이벤트 대기
-    xEventGroupWaitBits(xSensorEventGroup,
-      ALL_DATA_READY_EVENT,
-      pdTRUE, // 이벤트 비트 자동 클리어
-      pdTRUE, // 모든 비트 필요
-      portMAX_DELAY);
-    
-    send_sensor_data(data->dht, air_dust_level);
-
-    state->transparency = calculate_transparency(state->mode, data->illum, 0);
-    if (state->mode == MODE_MANUAL)
+    uxBits = xEventGroupWaitBits(xSensorEventGroup,
+                                 ANY_DATA_READY_EVENT,
+                                 pdFALSE, // xClearOnExit: 비트 자동 클리어 설정
+                                 pdFALSE, // xWaitForAllBits: 모든 비트 필요 여부
+                                 portMAX_DELAY);
+    if (uxBits == CGW_DATA_READY_EVENT || uxBits == SUN_DATA_READY_EVENT)
     {
+      continue;
+    }
+
+    if (uxBits & SENSOR_DATA_READY_EVENT)
+    {
+      osDelay(100);
+      send_sensor_data(data->dht, air_dust_level);
+
+      if (state->mode == MODE_SMART)
+      {
+        state->roof = Smart_Sunroof_Control(&sunroof);
+        state->transparency = calculate_transparency(data->illum);
+        state->airconditioner = smart_device_command(data->dht, threshold_input.temp_threshold);
+
+        osDelay(100);
+        send_device_state(&sunroof);
+      }
+    }
+
+    if (uxBits & USER_DATA_READY_EVENT)
+    {
+      // User_Sunroof_Control();
       // user_device_command();
-      // state->roof = User_Sunroof_Control();
     }
-    else if (state->mode == MODE_SMART)
-    {
-      state->airconditioner = smart_device_command(data->dht, threshold_input.temp_threshold);
-      state->roof = Smart_Sunroof_Control(&sunroof);
 
-      send_device_state(&sunroof);
-      Send_Sunroof_Command_CGW_to_RPI(state);
-    }
+    osDelay(100);
+    Send_Sunroof_Command_CGW_to_SUN(state);
+    osDelay(100);
+    xEventGroupClearBits(xSensorEventGroup, ANY_DATA_READY_EVENT);
   }
   /* USER CODE END StartDataHandlerTask */
 }
@@ -284,7 +302,6 @@ void StartDataHandlerTask(void *argument)
 /* USER CODE BEGIN Application */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  sensor_data_t *data = &sunroof.data;
   system_state_t *state = &sunroof.state;
 
   if (huart->Instance == USART1)
@@ -346,6 +363,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     // 받은 데이터를 다시 전송 (Echo)
     HAL_UART_Transmit(&huart2, debug_msg, strlen((char *)debug_msg), 100);
 #endif
+    xEventGroupSetBits(xSensorEventGroup, USER_DATA_READY_EVENT);
+
     // 다시 수신 대기 (인터럽트 재등록)
     HAL_UART_Receive_DMA(&huart4, rx_data, sizeof(rx_data));
   }

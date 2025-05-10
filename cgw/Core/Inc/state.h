@@ -22,14 +22,10 @@ typedef enum
 typedef enum
 {
     AIR_CONDITIONER_OFF = 0x00U,
-    AIR_CONDITIONER_ON  = 0x01U
+    AIR_CONDITIONER_IN  = 0x01U,
+    AIR_CONDITIONER_OUT = 0x02U,
+    AIR_CONDITIONER_MAX = 0x03U
 } aircond_state_t;
-
-typedef enum
-{
-    VENTILATION_OFF = 0x00U,
-    VENTILATION_ON  = 0x01U
-} ventilation_state_t;
 
 typedef enum
 {
@@ -59,7 +55,6 @@ typedef struct
     roof_state_t        roof;
     uint8_t             transparency;
     aircond_state_t     airconditioner;
-    ventilation_state_t ventilation;
 } system_state_t;
 
 #endif /* STATE_H_ */

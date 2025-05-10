@@ -176,23 +176,25 @@ uint8_t Smart_Sunroof_Control(sunroof_t *sunroof)
                               data->pm,
                               &sunroof->air_dust_level);
 
+    in_out_mode = 0;
+
     // 2-1. 외부 공기질이 많이 나쁘면 그냥 닫기
     if (aqi_in < aqi_out && aqi_out > threshold_input.air_bad_threshold)
     {
-        in_out_mode = 0; // 내기모드
+        // in_out_mode = 1; // 내기모드
         return SUNROOF_CLOSED;
     }
     // 2-2. 내부 공기질이 외부보다 나쁘고 그 차이가 0.4 이상이면 틸팅
     if (aqi_in - aqi_out >= 0.4f)
     {
-        in_out_mode = 1; // 외기모드
+        in_out_mode = 2; // 외기모드
         need_vent   = 1;
     }
     // 2-3. 내부 공기질과 외부 공기질이 차이가 적으면 닫기
     if (aqi_in - aqi_out <= 0.2f && aqi_in - aqi_out >= -0.2f
         && state->roof != SUNROOF_CLOSED)
     {
-        in_out_mode = 0; // 내기모드
+        // in_out_mode = 1; // 내기모드
         need_vent   = 0; // 닫기
     }
     // 3. 고속 주행 시 무조건 닫힘
@@ -204,7 +206,7 @@ uint8_t Smart_Sunroof_Control(sunroof_t *sunroof)
     // 4. 비가 올때 상황
     if (data->rain)
     {
-        in_out_mode = 0; // 내기모드
+        // in_out_mode = 1; // 내기모드
         // 4-1. 속력이 30km/h 미만이면 닫힘
         if (data->velocity < 30.0f && state->roof != SUNROOF_CLOSED)
         {

@@ -30,8 +30,9 @@ conditioner_on / conditioner_off 함수는 에어컨/히터 on/off 함수
 #include "car_device_control.h"
 
 #include "state.h"
+#include "sunroof_control.h"
 
-#define TEMP_THRESHOLD 10.0f
+#define TEMP_THRESHOLD             10.0f
 #define DISCOMFORT_INDEX_THRESHOLD 68.0f
 
 float current_in_di1;
@@ -42,34 +43,34 @@ static float calculate_discomfort_index(float temperature, float humidity)
     return (0.81f * temperature
             + 0.01f * humidity * (0.99f * temperature - 14.3f) + 46.3f);
 }
-static void fan_on(uint8_t in_out_mode)
-{
-    if (in_out_mode == 0)
-    {
-        // 내기모드
-    }
-    else
-    {
-        // 외기모드
-    }
-    HAL_GPIO_WritePin(GPIOA,
-                      GPIO_PIN_1,
-                      GPIO_PIN_RESET); // IN LOW → 릴레이 작동 → 팬 ON
-}
-static void fan_off(uint8_t in_out_mode)
-{
-    if (in_out_mode == 0)
-    {
-        // 내기모드
-    }
-    else
-    {
-        // 외기모드
-    }
-    HAL_GPIO_WritePin(GPIOA,
-                      GPIO_PIN_1,
-                      GPIO_PIN_SET); // IN HIGH → 릴레이 끊김 → 팬 OFF
-}
+// static void fan_on()
+// {
+//     if (in_out_mode == 0)
+//     {
+//         // 내기모드
+//     }
+//     else
+//     {
+//         // 외기모드
+//     }
+//     HAL_GPIO_WritePin(GPIOA,
+//                       GPIO_PIN_1,
+//                       GPIO_PIN_RESET); // IN LOW → 릴레이 작동 → 팬 ON
+// }
+// static void fan_off()
+// {
+//     if (in_out_mode == 0)
+//     {
+//         // 내기모드
+//     }
+//     else
+//     {
+//         // 외기모드
+//     }
+//     HAL_GPIO_WritePin(GPIOA,
+//                       GPIO_PIN_1,
+//                       GPIO_PIN_SET); // IN HIGH → 릴레이 끊김 → 팬 OFF
+// }
 static void conditioner_on(uint16_t GPIO_Pin)
 {
     HAL_GPIO_WritePin(GPIOA, GPIO_Pin, GPIO_PIN_SET);
@@ -120,6 +121,7 @@ uint8_t smart_device_command(dht11_data_t *dht, uint8_t temp_user)
         calculate_discomfort_index(temp_out,
                                    humi_out); // 현재 외부 불쾌지수
 
+    uint8_t aircond_state = 0;
     uint8_t season = 0; // 0 == 여름, 1 == 겨울
 
     if (temp_out < TEMP_THRESHOLD)
@@ -136,7 +138,7 @@ uint8_t smart_device_command(dht11_data_t *dht, uint8_t temp_user)
             {
                 operation_conditioner(season, 1, temp_user);
             }
-            return 1;
+            aircond_state = 1;
         }
     }
 
@@ -147,9 +149,9 @@ uint8_t smart_device_command(dht11_data_t *dht, uint8_t temp_user)
         {
             operation_conditioner(season, 1, temp_user);
         }
-        return 1;
+        aircond_state = 1;
     }
-    return 0;
+    return aircond_state | in_out_mode;
 }
 
 void user_device_command(uint8_t season, uint8_t operate, uint8_t temp_user)

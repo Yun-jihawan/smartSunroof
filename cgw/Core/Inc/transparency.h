@@ -4,6 +4,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-uint8_t calculate_transparency(int mode, int light_lux, int user_transparency);
+uint8_t calculate_transparency(int light_lux);
 
 #endif /* INC_TRANSPARENCY_H_ */

@@ -3,8 +3,8 @@
 
 #include "main.h"
 
-#define THRES_IDENTIFIER   0xFE
-#define CONTROL_IDENTIFIER 0xFF
+#define THRES_IDENTIFIER   0x55
+#define CONTROL_IDENTIFIER 0xAA
 
 #define RECEIVED_MASK 0x01
 
