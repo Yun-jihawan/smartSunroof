@@ -1,7 +1,9 @@
 package com.example.bluelink
 
-import android.app.Activity
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -13,6 +15,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Schedule // 아이콘 import 추가
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,7 +26,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.bluelink.model.ReservationDetails
 import com.example.bluelink.ui.theme.BluelinkTheme
 import com.example.bluelink.viewmodel.MainViewModel
 import com.journeyapps.barcodescanner.ScanContract
@@ -31,8 +34,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-// ... (MainActivity 클래스 및 MainScreen, MonitoringScreen, ControlScreen, VehicleRegistrationScreen은 이전과 거의 동일하게 유지)
-// MainActivity 클래스
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
 
@@ -51,11 +52,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// 메인 화면 (탭 구성)
 @Composable
 fun MainScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
     val tabs = listOf("모니터링", "제어", "유지보수", "차량 등록")
-    var selectedTabIndex by remember { mutableIntStateOf(0) } // mutableIntStateOf 사용
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     Column(modifier = modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = selectedTabIndex) {
@@ -71,15 +71,11 @@ fun MainScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
         when (selectedTabIndex) {
             0 -> MonitoringScreen(viewModel)
             1 -> ControlScreen(viewModel)
-            2 -> MaintenanceScreen(viewModel) // MaintenanceScreen 호출
+            2 -> MaintenanceScreen(viewModel)
             3 -> VehicleRegistrationScreen(viewModel)
         }
     }
 }
-
-
-// --- MonitoringScreen, ControlScreen, VehicleRegistrationScreen은 이전 코드 유지 ---
-// (MonitoringScreen의 Text 안내 메시지 등은 그대로 두거나 필요에 따라 수정)
 
 @Composable
 fun MonitoringScreen(viewModel: MainViewModel) {
@@ -90,7 +86,7 @@ fun MonitoringScreen(viewModel: MainViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()), // 스크롤 추가
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -109,7 +105,12 @@ fun MonitoringScreen(viewModel: MainViewModel) {
 
 @Composable
 fun ControlScreen(viewModel: MainViewModel) {
-    // ... (이전과 동일)
+    val vehicleState by viewModel.vehicleState.collectAsState()
+    // collectAsState()를 사용하여 StateFlow의 값을 가져옵니다.
+    val sunroofCommandInProgress by viewModel.isSunroofCommandInProgress.collectAsState()
+    val acCommandInProgress by viewModel.isAcCommandInProgress.collectAsState()
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -120,20 +121,70 @@ fun ControlScreen(viewModel: MainViewModel) {
     ) {
         Text("차량 원격 제어", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { viewModel.controlSunroof("open") }) { Text("선루프 열기") }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = { viewModel.controlSunroof("close") }) { Text("선루프 닫기") }
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Button(
+                onClick = {
+                    viewModel.controlSunroof("open")
+                    Toast.makeText(context, "선루프 열기 명령 전송", Toast.LENGTH_SHORT).show()
+                },
+                // .value를 사용하여 Boolean 값을 가져와서 ! 연산자 사용
+                enabled = !sunroofCommandInProgress && !acCommandInProgress
+            ) {
+                Text("선루프 열기")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = {
+                    viewModel.controlSunroof("close")
+                    Toast.makeText(context, "선루프 닫기 명령 전송", Toast.LENGTH_SHORT).show()
+                },
+                enabled = !sunroofCommandInProgress && !acCommandInProgress
+            ) {
+                Text("선루프 닫기")
+            }
+        }
+        if (sunroofCommandInProgress) {
+            Spacer(modifier = Modifier.height(8.dp))
+            CircularProgressIndicator()
+            Text("선루프 제어 중...")
+        }
+        Text("현재 선루프 상태: ${vehicleState.sunroofStatus}", style = MaterialTheme.typography.bodyMedium)
+
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { viewModel.controlAC("on") }) { Text("에어컨 켜기") }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = { viewModel.controlAC("off") }) { Text("에어컨 끄기") }
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Button(
+                onClick = {
+                    viewModel.controlAC("on")
+                    Toast.makeText(context, "에어컨 켜기 명령 전송", Toast.LENGTH_SHORT).show()
+                },
+                enabled = !sunroofCommandInProgress && !acCommandInProgress
+            ) {
+                Text("에어컨 켜기")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = {
+                    viewModel.controlAC("off")
+                    Toast.makeText(context, "에어컨 끄기 명령 전송", Toast.LENGTH_SHORT).show()
+                },
+                enabled = !sunroofCommandInProgress && !acCommandInProgress
+            ) {
+                Text("에어컨 끄기")
+            }
+        }
+        if (acCommandInProgress) {
+            Spacer(modifier = Modifier.height(8.dp))
+            CircularProgressIndicator()
+            Text("에어컨 제어 중...")
+        }
+        Text("현재 에어컨 상태: ${vehicleState.acStatus}", style = MaterialTheme.typography.bodyMedium)
     }
 }
 
-
 @Composable
 fun VehicleRegistrationScreen(viewModel: MainViewModel) {
-    // ... (이전과 동일, rememberLauncherForActivityResult 등)
     val registeredVehicleInfo by viewModel.registeredVehicleInfo.collectAsState()
     val qrScanResultValue by viewModel.qrScanResult.collectAsState()
 
@@ -185,25 +236,22 @@ fun VehicleRegistrationScreen(viewModel: MainViewModel) {
     }
 }
 
-
-// --- 유지보수 화면 및 예약 폼 구현 ---
 @Composable
 fun MaintenanceScreen(viewModel: MainViewModel) {
     val maintenanceNotification by viewModel.maintenanceNotification.collectAsState()
-    val sunroofUsage by viewModel.sunroofUsage.collectAsState() // 선루프 사용 데이터
+    val sunroofUsage by viewModel.sunroofUsage.collectAsState()
     val showReservationForm by viewModel.showReservationForm.collectAsState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()), // 내용이 길어질 수 있으므로 스크롤 추가
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("선루프 유지보수 정보", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // SWR-MOB-17: 선루프 사용 데이터 표시 (예시)
         Text("모델: ${sunroofUsage.sunroofModel}")
         Text("총 사용 시간: ${sunroofUsage.totalOperatingHours} 시간")
         Text("총 개폐 횟수: ${sunroofUsage.openCloseCycles} 회")
@@ -213,24 +261,22 @@ fun MaintenanceScreen(viewModel: MainViewModel) {
             Text("🔔 알림", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
             Text(maintenanceNotification, style = MaterialTheme.typography.bodyLarge)
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { viewModel.toggleReservationForm(true) }) { // 예약 폼 표시
+            Button(onClick = { viewModel.toggleReservationForm(true) }) {
                 Text("서비스 센터 예약하기")
             }
         } else {
             Text("현재 특별한 유지보수 알림이 없습니다. 정기적인 점검을 권장합니다.")
         }
 
-        // SWR-MOB-19, SWR-MOB-20: 예약 폼 (조건부 표시)
         if (showReservationForm) {
             Spacer(modifier = Modifier.height(24.dp))
-            Divider() // 구분선
+            Divider()
             Spacer(modifier = Modifier.height(24.dp))
             ReservationForm(viewModel = viewModel)
         }
     }
 }
 
-// SWR-MOB-19, SWR-MOB-20: 서비스 예약 폼 Composable
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationForm(viewModel: MainViewModel) {
@@ -239,41 +285,69 @@ fun ReservationForm(viewModel: MainViewModel) {
     val availableServiceCenters = viewModel.availableServiceCenters
 
     var serviceCenterExpanded by remember { mutableStateOf(false) }
-
-    // 날짜 선택을 위한 상태 (간단한 예시로 TextField 사용)
-    // 실제 앱에서는 DatePickerDialog 등을 사용하는 것이 좋음
+    val context = LocalContext.current
     val calendar = Calendar.getInstance()
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, selectedYear, selectedMonth, selectedDayOfMonth ->
+            viewModel.updateReservationDate("$selectedYear-${selectedMonth + 1}-${selectedDayOfMonth}")
+        }, year, month, day
+    )
+    datePickerDialog.datePicker.minDate = calendar.timeInMillis
+
+    val hour = calendar.get(Calendar.HOUR_OF_DAY)
+    val minute = calendar.get(Calendar.MINUTE)
+    val timePickerDialog = TimePickerDialog(
+        context,
+        { _, selectedHour, selectedMinute ->
+            viewModel.updateReservationTime(String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute))
+        }, hour, minute, true
+    )
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("서비스 예약", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 날짜 입력 (TextField 사용, 실제로는 DatePicker 사용 권장)
         OutlinedTextField(
             value = reservationDetails.date,
-            onValueChange = { viewModel.updateReservationDate(it) },
+            onValueChange = { },
             label = { Text("예약 날짜 (YYYY-MM-DD)") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+            readOnly = true,
+            trailingIcon = {
+                Icon(
+                    Icons.Filled.DateRange,
+                    contentDescription = "날짜 선택",
+                    modifier = Modifier.clickable { datePickerDialog.show() }
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 시간 입력 (TextField 사용, 실제로는 TimePicker 사용 권장)
         OutlinedTextField(
             value = reservationDetails.time,
-            onValueChange = { viewModel.updateReservationTime(it) },
+            onValueChange = { },
             label = { Text("예약 시간 (HH:MM)") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+            readOnly = true,
+            trailingIcon = {
+                Icon(
+                    Icons.Filled.Schedule, // 수정: Schedule 아이콘 사용
+                    contentDescription = "시간 선택",
+                    modifier = Modifier.clickable { timePickerDialog.show() }
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // SWR-MOB-20: 서비스 센터 선택 (DropdownMenu 사용)
         Box {
             OutlinedTextField(
                 value = reservationDetails.serviceCenter.ifEmpty { "서비스 센터 선택" },
-                onValueChange = { }, // 직접 수정 방지
+                onValueChange = { },
                 label = { Text("서비스 센터") },
                 readOnly = true,
                 trailingIcon = { Icon(Icons.Filled.ArrowDropDown, "선택", Modifier.clickable { serviceCenterExpanded = true }) },
@@ -282,7 +356,7 @@ fun ReservationForm(viewModel: MainViewModel) {
             DropdownMenu(
                 expanded = serviceCenterExpanded,
                 onDismissRequest = { serviceCenterExpanded = false },
-                modifier = Modifier.fillMaxWidth(0.8f) // 너비 조정
+                modifier = Modifier.fillMaxWidth(0.8f) // Use fillMaxWidth with a fraction
             ) {
                 availableServiceCenters.forEach { center ->
                     DropdownMenuItem(
@@ -297,17 +371,15 @@ fun ReservationForm(viewModel: MainViewModel) {
         }
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 요청 사항 입력
         OutlinedTextField(
             value = reservationDetails.requestDetails,
             onValueChange = { viewModel.updateServiceRequestDetails(it) },
             label = { Text("추가 요청 사항 (선택)") },
-            modifier = Modifier.height(100.dp).fillMaxWidth(), // 여러 줄 입력 가능하도록 높이 조절
+            modifier = Modifier.height(100.dp).fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done)
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 예약 상태 메시지 표시
         if (reservationStatusMessage.isNotEmpty()) {
             Text(
                 reservationStatusMessage,
@@ -326,7 +398,7 @@ fun ReservationForm(viewModel: MainViewModel) {
             }
             Spacer(modifier = Modifier.width(8.dp))
             TextButton(
-                onClick = { viewModel.toggleReservationForm(false) }, // 폼 닫기
+                onClick = { viewModel.toggleReservationForm(false) },
                 modifier = Modifier.weight(1f)
             ) {
                 Text("취소")
@@ -335,16 +407,11 @@ fun ReservationForm(viewModel: MainViewModel) {
     }
 }
 
-
-// --- Preview 설정 ---
 @Preview(showBackground = true, name = "Maintenance Screen - No Notification")
 @Composable
 fun MaintenanceScreenPreviewNoNotification() {
-    val previewViewModel = MainViewModel() // Preview용 ViewModel
-    // 알림 없는 상태로 설정
-    // previewViewModel._maintenanceNotification.value = "" // 직접 접근은 어렵지만, 이런 상태를 가정
     BluelinkTheme {
-        MaintenanceScreen(viewModel = previewViewModel)
+        MaintenanceScreen(viewModel = MainViewModel())
     }
 }
 
@@ -352,12 +419,8 @@ fun MaintenanceScreenPreviewNoNotification() {
 @Composable
 fun MaintenanceScreenPreviewWithNotification() {
     val previewViewModel = MainViewModel()
-    // 알림 있는 상태로 설정 (실제로는 ViewModel 내부 로직에 따라 결정됨)
-    // previewViewModel._maintenanceNotification.value = "선루프 점검이 필요합니다."
-    // previewViewModel._sunroofUsage.value = SunroofUsageData("Preview Model", 1200, 5500)
-    // previewViewModel.checkMaintenance() // Preview에서 이 함수를 직접 호출하여 상태 변경 시도
     BluelinkTheme {
-        Column { // Column으로 감싸야 Preview에서 정상적으로 보일 수 있음
+        Column {
             MaintenanceScreen(viewModel = previewViewModel)
         }
     }
@@ -367,14 +430,12 @@ fun MaintenanceScreenPreviewWithNotification() {
 @Composable
 fun ReservationFormPreview() {
     BluelinkTheme {
-        // ReservationForm은 Column 내부에 있으므로 Column으로 감싸서 Preview
         Column(modifier = Modifier.padding(16.dp)) {
             ReservationForm(viewModel = MainViewModel())
         }
     }
 }
 
-// DefaultPreview는 MainScreen을 사용하므로 유지
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
