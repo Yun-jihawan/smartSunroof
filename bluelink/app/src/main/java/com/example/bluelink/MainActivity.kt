@@ -525,12 +525,16 @@ fun ControlScreen(viewModel: MainViewModel) {
                     style = MaterialTheme.typography.titleMedium,
                     color = if (isOverallAutoMode) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Button(
                         onClick = { viewModel.controlSunroof("open") },
                         enabled = !isOverallAutoMode && !anyCommandInProgress, // 자동 모드 아니고, 어떤 명령도 진행 중이지 않을 때
                         shape = buttonShape, colors = primaryButtonColors
                     ) { Text("선루프 열기") }
+                    Spacer(modifier = Modifier.width(16.dp))
                     Button(
                         onClick = { viewModel.controlSunroof("close") },
                         enabled = !isOverallAutoMode && !anyCommandInProgress,
@@ -557,12 +561,16 @@ fun ControlScreen(viewModel: MainViewModel) {
                     style = MaterialTheme.typography.titleMedium,
                     color = if (isOverallAutoMode) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Button(
                         onClick = { viewModel.controlAC("on") },
                         enabled = !isOverallAutoMode && !anyCommandInProgress,
                         shape = buttonShape, colors = primaryButtonColors
                     ) { Text("에어컨 켜기") }
+                    Spacer(modifier = Modifier.width(16.dp))
                     Button(
                         onClick = { viewModel.controlAC("off") },
                         enabled = !isOverallAutoMode && !anyCommandInProgress,
