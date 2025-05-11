@@ -148,13 +148,17 @@ class MainViewModel : ViewModel() {
         val jsonObj = JSONObject(message)
         val newSunroofStatus = jsonObj.optString("sunroof_status", _vehicleState.value.sunroofStatus)
         val newAcStatus = jsonObj.optString("ac_status", _vehicleState.value.acStatus)
-        // overall_control_mode 또는 유사한 키로 차량의 현재 통합 제어 모드를 수신한다고 가정
         val newOverallControlMode = jsonObj.optString("overall_control_mode", _vehicleState.value.overallControlMode)
+        // 주행 상태 및 속력 파싱 추가
+        val newIsDriving = jsonObj.optBoolean("is_driving", _vehicleState.value.isDriving)
+        val newCurrentSpeed = jsonObj.optInt("current_speed", _vehicleState.value.currentSpeed)
 
         _vehicleState.value = VehicleState(
             sunroofStatus = newSunroofStatus,
             acStatus = newAcStatus,
-            overallControlMode = newOverallControlMode // 통합 제어 모드로 업데이트
+            overallControlMode = newOverallControlMode,
+            isDriving = newIsDriving,           // 주행 상태 업데이트
+            currentSpeed = newCurrentSpeed        // 속력 업데이트
         )
         Log.d("MainViewModel", "VehicleState 업데이트 (MQTT): ${_vehicleState.value}")
     }

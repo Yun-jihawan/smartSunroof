@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -94,11 +95,124 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     snackbarHost = { SnackbarHost(snackbarHostState) }
                 ) { innerPadding ->
-                    MainScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        viewModel = mainViewModel
+                    // MainScreen 호출 시 ViewModel의 isDriving 상태를 전달하거나,
+                    // MainScreen 내부에서 isDriving 상태를 구독하여 UI를 분기합니다.
+                    val vehicleState by mainViewModel.vehicleState.collectAsState()
+                    val isDriving = vehicleState.isDriving
+
+                    if (isDriving) {
+                        DrivingModeScreen(
+                            modifier = Modifier.padding(innerPadding),
+                            currentSpeed = vehicleState.currentSpeed
+                        )
+                    } else {
+                        MainScreenWithTabs( // 기존 MainScreen 이름을 변경
+                            modifier = Modifier.padding(innerPadding),
+                            viewModel = mainViewModel
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 주행 중 표시 화면
+@Composable
+fun DrivingModeScreen(modifier: Modifier = Modifier, currentSpeed: Int) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceDim), // 어두운 배경 또는 다른 적절한 색상
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.DirectionsCar,
+                contentDescription = "주행 중",
+                modifier = Modifier.size(96.dp), // 큰 아이콘
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "주행 중",
+                style = MaterialTheme.typography.headlineLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = "$currentSpeed",
+                    style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = " km/h",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp) // 단위 정렬
+                )
+            }
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                "안전 운전 중입니다.\n앱 기능은 차량이 주차된 후 사용해주세요.",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+
+// 기존 MainScreen 이름을 MainScreenWithTabs 등으로 변경
+@Composable
+fun MainScreenWithTabs(modifier: Modifier = Modifier, viewModel: MainViewModel) {
+    val tabs = listOf("모니터링", "제어", "유지보수", "차량 등록")
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    // val vehicleState by viewModel.vehicleState.collectAsState() // isDriving은 이미 MainActivity에서 처리
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        MqttStatusIndicator(viewModel = viewModel)
+
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+            contentColor = MaterialTheme.colorScheme.primary,
+            indicator = { tabPositions ->
+                if (selectedTabIndex < tabPositions.size) {
+                    TabRowDefaults.Indicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        height = 3.dp,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
+            }
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    text = { Text(title, style = MaterialTheme.typography.labelLarge, fontSize = 13.sp) },
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            when (selectedTabIndex) {
+                0 -> MonitoringScreen(viewModel)
+                1 -> ControlScreen(viewModel)
+                2 -> MaintenanceScreen(viewModel)
+                3 -> VehicleRegistrationScreen(viewModel)
             }
         }
     }
@@ -168,61 +282,6 @@ fun MqttStatusIndicator(viewModel: MainViewModel) {
                 shape = MaterialTheme.shapes.small
             ) {
                 Text("재연결", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
-            }
-        }
-    }
-}
-
-
-@Composable
-fun MainScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
-    val tabs = listOf("모니터링", "제어", "유지보수", "차량 등록")
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        MqttStatusIndicator(viewModel = viewModel)
-
-        TabRow(
-            selectedTabIndex = selectedTabIndex,
-            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-            contentColor = MaterialTheme.colorScheme.primary,
-            indicator = { tabPositions ->
-                // TabRowDefaults.Indicator를 사용하여 인디케이터 스타일 지정
-                if (selectedTabIndex < tabPositions.size) { // IndexOutOfBounds 방지
-                    TabRowDefaults.Indicator(
-                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]), // 올바른 함수 사용
-                        height = 3.dp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
-                    text = {
-                        Text(
-                            title,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontSize = 13.sp
-                        )
-                    },
-                    selectedContentColor = MaterialTheme.colorScheme.primary,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
-        }
-        Box(modifier = Modifier.weight(1f)) {
-            when (selectedTabIndex) {
-                0 -> MonitoringScreen(viewModel)
-                1 -> ControlScreen(viewModel)
-                2 -> MaintenanceScreen(viewModel)
-                3 -> VehicleRegistrationScreen(viewModel)
             }
         }
     }
@@ -717,6 +776,22 @@ fun ReservationForm(viewModel: MainViewModel) {
     }
 }
 
+@Preview(showBackground = true, name = "Driving Mode Screen")
+@Composable
+fun DrivingModeScreenPreview() {
+    BluelinkTheme {
+        DrivingModeScreen(currentSpeed = 80)
+    }
+}
+
+@Preview(showBackground = true, name = "Main Screen With Tabs Light")
+@Composable
+fun DefaultPreviewLight() { BluelinkTheme(darkTheme = false) { MainScreenWithTabs(viewModel = MainViewModel()) } }
+
+@Preview(showBackground = true, name = "Main Screen With Tabs Dark")
+@Composable
+fun DefaultPreviewDark() { BluelinkTheme(darkTheme = true) { MainScreenWithTabs(viewModel = MainViewModel()) } }
+
 @Preview(showBackground = true, name = "Monitoring Screen Preview")
 @Composable
 fun MonitoringScreenPreview() { BluelinkTheme { MonitoringScreen(viewModel = MainViewModel()) } }
@@ -732,11 +807,3 @@ fun MaintenanceScreenPreview() { BluelinkTheme { MaintenanceScreen(viewModel = M
 @Preview(showBackground = true, name = "Reservation Form Preview")
 @Composable
 fun ReservationFormPreview() { BluelinkTheme { Surface(modifier = Modifier.padding(16.dp)) { ReservationForm(viewModel = MainViewModel()) } } }
-
-@Preview(showBackground = true, name = "Main Screen Light")
-@Composable
-fun DefaultPreviewLight() { BluelinkTheme(darkTheme = false) { MainScreen(viewModel = MainViewModel()) } }
-
-@Preview(showBackground = true, name = "Main Screen Dark")
-@Composable
-fun DefaultPreviewDark() { BluelinkTheme(darkTheme = true) { MainScreen(viewModel = MainViewModel()) } }
