@@ -287,37 +287,39 @@ fun MqttStatusIndicator(viewModel: MainViewModel) {
     }
 }
 
-// MonitoringScreen - 외부 공기질 정보 표시 추가
+// MonitoringScreen - 필드명 변경 적용
 @Composable
 fun MonitoringScreen(viewModel: MainViewModel) {
     val vehicleState by viewModel.vehicleState.collectAsState()
-    val environmentData by viewModel.environmentData.collectAsState()
+    val environmentData by viewModel.environmentData.collectAsState() // 업데이트된 EnvironmentData 사용
 
     data class StatusVisuals(val icon: ImageVector, val color: Color, val label: String)
 
     @Composable
     fun getAirQualityVisuals(status: String, isOutdoor: Boolean = false): StatusVisuals {
         val lowerStatus = status.lowercase().replace(" ", "")
-        val defaultIcon = if (isOutdoor) Icons.Filled.Cloud else Icons.Filled.DirectionsCar // 외부/내부 기본 아이콘 구분
+        val defaultIcon = if (isOutdoor) Icons.Filled.Cloud else Icons.Filled.DirectionsCar
 
         return when {
             lowerStatus.contains("좋음") || lowerStatus.contains("good") -> StatusVisuals(Icons.Filled.Mood, StatusGood, "좋음")
             lowerStatus.contains("보통") || lowerStatus.contains("moderate") -> StatusVisuals(Icons.Filled.SentimentNeutral, StatusNormal, "보통")
             lowerStatus.contains("나쁨") || lowerStatus.contains("bad") -> StatusVisuals(Icons.Filled.SentimentDissatisfied, StatusBad, "나쁨")
             lowerStatus.contains("매우나쁨") || lowerStatus.contains("verybad") -> StatusVisuals(Icons.Filled.Sick, StatusBad.copy(alpha=0.7f), "매우 나쁨")
-            else -> StatusVisuals(defaultIcon, StatusUnknown, "알 수 없음")
+            else -> StatusVisuals(defaultIcon, StatusUnknown, status.ifEmpty { "알 수 없음" }) // 상태 텍스트가 비어있으면 "알 수 없음" 표시
         }
     }
 
     @Composable
-    fun getFineDustVisuals(status: String): StatusVisuals {
+    fun getFineDustVisuals(status: String, pm25Value: Double?): StatusVisuals {
         val lowerStatus = status.lowercase().replace(" ", "")
+        val displayValue = if (pm25Value != null) "$status (${String.format("%.1f", pm25Value)}µg/m³)" else status
+
         return when {
-            lowerStatus.contains("좋음") || lowerStatus.contains("good") || lowerStatus.contains("낮음") -> StatusVisuals(Icons.Filled.FilterDrama, StatusGood, "좋음/낮음")
-            lowerStatus.contains("보통") || lowerStatus.contains("moderate") -> StatusVisuals(Icons.Filled.FilterDrama, StatusNormal, "보통")
-            lowerStatus.contains("나쁨") || lowerStatus.contains("bad") || lowerStatus.contains("높음") -> StatusVisuals(Icons.Filled.Grain, StatusBad, "나쁨/높음")
-            lowerStatus.contains("매우나쁨") || lowerStatus.contains("verybad") || lowerStatus.contains("매우높음") -> StatusVisuals(Icons.Filled.BlurOn, StatusBad.copy(alpha=0.7f), "매우 나쁨/높음")
-            else -> StatusVisuals(Icons.Filled.Grain, StatusUnknown, "알 수 없음")
+            lowerStatus.contains("좋음") || lowerStatus.contains("낮음") -> StatusVisuals(Icons.Filled.FilterDrama, StatusGood, displayValue)
+            lowerStatus.contains("보통") -> StatusVisuals(Icons.Filled.FilterDrama, StatusNormal, displayValue)
+            lowerStatus.contains("나쁨") || lowerStatus.contains("높음") -> StatusVisuals(Icons.Filled.Grain, StatusBad, displayValue)
+            lowerStatus.contains("매우나쁨") || lowerStatus.contains("매우높음") -> StatusVisuals(Icons.Filled.BlurOn, StatusBad.copy(alpha=0.7f), displayValue)
+            else -> StatusVisuals(Icons.Filled.Grain, StatusUnknown, if (displayValue.isNotEmpty()) displayValue else "알 수 없음")
         }
     }
 
@@ -341,7 +343,7 @@ fun MonitoringScreen(viewModel: MainViewModel) {
         fun InfoRow(
             icon: ImageVector,
             label: String,
-            value: String,
+            value: String, // 표시될 최종 문자열 (상태 + 수치)
             iconTint: Color = MaterialTheme.colorScheme.secondary,
             valueColor: Color = MaterialTheme.colorScheme.onSurface
         ) {
@@ -358,7 +360,7 @@ fun MonitoringScreen(viewModel: MainViewModel) {
         val cardColors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp))
         val cardElevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
 
-        // 차량 상태 Card (이전과 동일)
+        // 차량 상태 Card (변경 없음)
         Card(modifier = Modifier.fillMaxWidth(), colors = cardColors, elevation = cardElevation) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 InfoRow(Icons.Filled.WbSunny, "선루프 상태", vehicleState.sunroofStatus)
@@ -366,7 +368,7 @@ fun MonitoringScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 실내외 환경 데이터 Card (외부 공기질 제외)
+        // 실내외 환경 데이터 Card (변경 없음)
         Card(modifier = Modifier.fillMaxWidth(), colors = cardColors, elevation = cardElevation) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 InfoRow(Icons.Filled.Thermostat, "실내 온도", "${String.format("%.1f", environmentData.indoorTemperature)}°C")
@@ -376,35 +378,39 @@ fun MonitoringScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 공기질 및 미세먼지 Card (실내/외부 공기질, 미세먼지)
+        // 공기질 및 미세먼지 Card - 필드명 변경 적용
         Card(modifier = Modifier.fillMaxWidth(), colors = cardColors, elevation = cardElevation) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // 실내 공기질 표시
-                val indoorAirQualityVisuals = getAirQualityVisuals(environmentData.airQuality, isOutdoor = false)
+                // 수치 데이터(indoorAqi)가 있다면 getAirQualityVisuals 함수를 수정하여 함께 표시하거나,
+                // environmentData.indoorAirQualityText 자체에 수치가 포함되어 있다고 가정합니다.
+                val indoorAirQualityVisuals = getAirQualityVisuals(environmentData.indoorAirQualityText, isOutdoor = false)
+                val indoorAqiText = environmentData.indoorAqi?.let { " (AQI: $it)" } ?: "" // AQI 값 있으면 추가
                 InfoRow(
                     icon = indoorAirQualityVisuals.icon,
                     label = "실내 공기질",
-                    value = environmentData.airQuality, // 수치 포함된 문자열 가정
+                    value = "${environmentData.indoorAirQualityText}$indoorAqiText", // 상태 텍스트와 수치 함께 표시
                     iconTint = indoorAirQualityVisuals.color,
                     valueColor = indoorAirQualityVisuals.color
                 )
 
-                // 외부 공기질 표시 추가
-                val outdoorAirQualityVisuals = getAirQualityVisuals(environmentData.outdoorAirQuality, isOutdoor = true)
+                // 외부 공기질 표시
+                val outdoorAirQualityVisuals = getAirQualityVisuals(environmentData.outdoorAirQualityText, isOutdoor = true)
+                val outdoorAqiText = environmentData.outdoorAqi?.let { " (AQI: $it)" } ?: ""
                 InfoRow(
                     icon = outdoorAirQualityVisuals.icon,
                     label = "외부 공기질",
-                    value = environmentData.outdoorAirQuality, // 수치 포함된 문자열 가정
+                    value = "${environmentData.outdoorAirQualityText}$outdoorAqiText",
                     iconTint = outdoorAirQualityVisuals.color,
                     valueColor = outdoorAirQualityVisuals.color
                 )
 
                 // 미세먼지 표시
-                val fineDustVisuals = getFineDustVisuals(environmentData.fineDust)
+                val fineDustVisuals = getFineDustVisuals(environmentData.fineDustStatusText, environmentData.fineDustPm25)
                 InfoRow(
                     icon = fineDustVisuals.icon,
                     label = "미세먼지 (PM2.5)",
-                    value = environmentData.fineDust, // 수치 포함된 문자열 가정
+                    value = fineDustVisuals.label, // getFineDustVisuals에서 이미 수치 포함된 레이블 반환
                     iconTint = fineDustVisuals.color,
                     valueColor = fineDustVisuals.color
                 )
