@@ -21,12 +21,19 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Autorenew // 자동 모드 아이콘 (예시)
+import androidx.compose.material.icons.filled.BlurOn
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.FilterDrama // 미세먼지 아이콘 예시
+import androidx.compose.material.icons.filled.Grain
+import androidx.compose.material.icons.filled.Mood // 공기질 '좋음' 아이콘 예시
 import androidx.compose.material.icons.filled.Opacity
+import androidx.compose.material.icons.filled.SentimentDissatisfied // 공기질 '나쁨' 아이콘 예시
+import androidx.compose.material.icons.filled.SentimentNeutral // 공기질 '보통' 아이콘 예시
 import androidx.compose.material.icons.filled.SettingsRemote
+import androidx.compose.material.icons.filled.Sick
 import androidx.compose.material.icons.filled.SignalWifi4Bar
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Thermostat
@@ -39,6 +46,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector // ImageVector 직접 사용 위해
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -219,20 +227,45 @@ fun MainScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
     }
 }
 
+// MonitoringScreen - 공기질/미세먼지 시각화 개선
 @Composable
 fun MonitoringScreen(viewModel: MainViewModel) {
     val vehicleState by viewModel.vehicleState.collectAsState()
     val environmentData by viewModel.environmentData.collectAsState()
+    // 마지막 업데이트 시간 표시는 건너뛰기로 했으므로 관련 StateFlow 구독은 주석 처리 또는 제거
+    // val vehicleStateLastUpdated by viewModel.vehicleStateLastUpdated.collectAsState()
+    // val environmentDataLastUpdated by viewModel.environmentDataLastUpdated.collectAsState()
+
+    // 공기질/미세먼지 상태에 따른 아이콘과 색상을 반환하는 데이터 클래스 및 함수
+    data class StatusVisuals(val icon: ImageVector, val color: Color, val label: String)
 
     @Composable
-    fun getStatusColor(status: String): Color {
-        return when (status.lowercase()) {
-            "좋음", "낮음" -> StatusGood
-            "보통" -> StatusNormal
-            "나쁨", "높음", "매우 높음" -> StatusBad
-            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    fun getAirQualityVisuals(status: String): StatusVisuals {
+        val lowerStatus = status.lowercase().replace(" ", "") // 공백 제거 및 소문자 변환
+        return when {
+            lowerStatus.contains("좋음") || lowerStatus.contains("good") -> StatusVisuals(Icons.Filled.Mood, StatusGood, "좋음")
+            lowerStatus.contains("보통") || lowerStatus.contains("moderate") -> StatusVisuals(Icons.Filled.SentimentNeutral, StatusNormal, "보통")
+            lowerStatus.contains("나쁨") || lowerStatus.contains("bad") -> StatusVisuals(Icons.Filled.SentimentDissatisfied, StatusBad, "나쁨")
+            lowerStatus.contains("매우나쁨") || lowerStatus.contains("verybad") -> StatusVisuals(Icons.Filled.Sick, StatusBad.copy(alpha=0.7f), "매우 나쁨") // Sick 아이콘 import 필요
+            else -> StatusVisuals(Icons.Filled.Cloud, StatusUnknown, "알 수 없음") // 기본 아이콘 및 색상
         }
     }
+
+    @Composable
+    fun getFineDustVisuals(status: String): StatusVisuals {
+        // 미세먼지 상태는 종종 수치와 함께 "좋음 (PM2.5: 10µg/m³)" 형태로 오므로,
+        // 실제로는 수치를 파싱하여 등급을 나누고 아이콘/색상을 결정해야 할 수 있음.
+        // 여기서는 단순 문자열 매칭 예시
+        val lowerStatus = status.lowercase().replace(" ", "")
+        return when {
+            lowerStatus.contains("좋음") || lowerStatus.contains("good") || lowerStatus.contains("낮음") -> StatusVisuals(Icons.Filled.FilterDrama, StatusGood, "좋음/낮음") // FilterDrama 또는 다른 아이콘
+            lowerStatus.contains("보통") || lowerStatus.contains("moderate") -> StatusVisuals(Icons.Filled.FilterDrama, StatusNormal, "보통")
+            lowerStatus.contains("나쁨") || lowerStatus.contains("bad") || lowerStatus.contains("높음") -> StatusVisuals(Icons.Filled.Grain, StatusBad, "나쁨/높음") // Grain 또는 다른 아이콘
+            lowerStatus.contains("매우나쁨") || lowerStatus.contains("verybad") || lowerStatus.contains("매우높음") -> StatusVisuals(Icons.Filled.BlurOn, StatusBad.copy(alpha=0.7f), "매우 나쁨/높음") // BlurOn 아이콘 import 필요
+            else -> StatusVisuals(Icons.Filled.Cloud, StatusUnknown, "알 수 없음")
+        }
+    }
+    // Icons.Filled.Sick, Icons.Filled.Grain, Icons.Filled.BlurOn import 필요
 
     Column(
         modifier = Modifier
@@ -250,11 +283,13 @@ fun MonitoringScreen(viewModel: MainViewModel) {
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
+        // 정보 항목 표시용 Composable 함수 (아이콘 tint도 상태에 따라 변경 가능하도록 수정)
         @Composable
         fun InfoRow(
-            icon: androidx.compose.ui.graphics.vector.ImageVector,
+            icon: ImageVector,
             label: String,
-            value: String,
+            value: String, // 수치를 포함한 문자열로 가정
+            iconTint: Color = MaterialTheme.colorScheme.secondary, // 기본 아이콘 색상
             valueColor: Color = MaterialTheme.colorScheme.onSurface
         ) {
             Row(
@@ -265,10 +300,10 @@ fun MonitoringScreen(viewModel: MainViewModel) {
                     imageVector = icon,
                     contentDescription = label,
                     modifier = Modifier.size(28.dp),
-                    tint = MaterialTheme.colorScheme.secondary
+                    tint = iconTint // 아이콘 색상도 상태에 따라 변경 가능하도록
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Column {
+                Column(modifier = Modifier.weight(1f)) { // 텍스트가 길어질 경우를 대비
                     Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = valueColor)
                 }
@@ -278,32 +313,55 @@ fun MonitoringScreen(viewModel: MainViewModel) {
         val cardColors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp))
         val cardElevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
 
+        // 차량 상태 Card
         Card(modifier = Modifier.fillMaxWidth(), colors = cardColors, elevation = cardElevation) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 InfoRow(Icons.Filled.WbSunny, "선루프 상태", vehicleState.sunroofStatus)
                 InfoRow(Icons.Filled.AcUnit, "에어컨 상태", vehicleState.acStatus)
+                // 마지막 업데이트 시간 표시는 건너뛰기로 함
             }
         }
 
+        // 환경 데이터 Card
         Card(modifier = Modifier.fillMaxWidth(), colors = cardColors, elevation = cardElevation) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 InfoRow(Icons.Filled.Thermostat, "실내 온도", "${String.format("%.1f", environmentData.indoorTemperature)}°C")
                 InfoRow(Icons.Filled.Opacity, "실내 습도", "${String.format("%.1f", environmentData.indoorHumidity)}%")
                 InfoRow(Icons.Filled.Thermostat, "실외 온도", "${String.format("%.1f", environmentData.outdoorTemperature)}°C")
                 InfoRow(Icons.Filled.Opacity, "실외 습도", "${String.format("%.1f", environmentData.outdoorHumidity)}%")
+                // 마지막 업데이트 시간 표시는 건너뛰기로 함
             }
         }
 
+        // 공기질/미세먼지 Card - 시각화 개선
         Card(modifier = Modifier.fillMaxWidth(), colors = cardColors, elevation = cardElevation) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                InfoRow(Icons.Filled.Cloud, "공기질", environmentData.airQuality, getStatusColor(environmentData.airQuality))
-                InfoRow(Icons.Filled.Cloud, "미세먼지", environmentData.fineDust, getStatusColor(environmentData.fineDust))
+                // 실내 공기질 표시
+                val airQualityVisuals = getAirQualityVisuals(environmentData.airQuality)
+                InfoRow(
+                    icon = airQualityVisuals.icon,
+                    label = "실내 공기질", // "공기질" -> "실내 공기질"로 명확히
+                    value = environmentData.airQuality, // 이 문자열에 수치가 포함되어 있다고 가정
+                    iconTint = airQualityVisuals.color, // 아이콘 색상도 상태에 따라
+                    valueColor = airQualityVisuals.color
+                )
+
+                // 미세먼지 표시
+                val fineDustVisuals = getFineDustVisuals(environmentData.fineDust)
+                InfoRow(
+                    icon = fineDustVisuals.icon,
+                    label = "미세먼지 (PM2.5)", // 라벨 구체화
+                    value = environmentData.fineDust, // 이 문자열에 수치가 포함되어 있다고 가정
+                    iconTint = fineDustVisuals.color,
+                    valueColor = fineDustVisuals.color
+                )
+                // "외부 공기질"은 EnvironmentData 모델에 해당 필드가 추가된 후 구현 가능
             }
         }
 
         Spacer(modifier = Modifier.weight(1f))
         Text(
-            "(데이터는 MQTT를 통해 실시간으로 업데이트 됩니다)",
+            "(데이터는 MQTT 수신 시 갱신됩니다)",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
