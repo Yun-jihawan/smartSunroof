@@ -53,6 +53,9 @@ dependencies {
     // QR 코드 스캐닝을 위한 ZXing 라이브러리
     implementation(libs.zxing.android.embedded)
 
+    // MQTT Paho 라이브러리
+    implementation(libs.org.eclipse.paho.client.mqttv3)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

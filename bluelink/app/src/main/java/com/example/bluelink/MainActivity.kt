@@ -19,9 +19,13 @@ import com.example.bluelink.viewmodel.MainViewModel
 import com.google.zxing.integration.android.IntentIntegrator // ZXing IntentIntegrator import
 import com.journeyapps.barcodescanner.ScanContract // ZXing ScanContract import
 import com.journeyapps.barcodescanner.ScanOptions // ZXing ScanOptions import
+import androidx.activity.viewModels // Activity KTX의 viewModels 델리게이트를 사용하기 위한 import (권장)
 
 // 앱의 메인 액티비티
 class MainActivity : ComponentActivity() {
+    // MainViewModel 인스턴스 생성 (by viewModels() 사용)
+    private val mainViewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -29,7 +33,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     MainScreen(
                         modifier = Modifier.padding(innerPadding),
-                        viewModel = MainViewModel()
+                        viewModel = mainViewModel // 생성된 ViewModel 인스턴스 전달
                     )
                 }
             }
@@ -85,9 +89,11 @@ fun MonitoringScreen(viewModel: MainViewModel) {
         Text("실외 온도: ${environmentData.outdoorTemperature}°C, 습도: ${environmentData.outdoorHumidity}%")
         Text("공기질: ${environmentData.airQuality}, 미세먼지: ${environmentData.fineDust}")
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { viewModel.refreshData() }) {
-            Text("새로고침 (10초마다 자동 갱신 예정)")
-        }
+        // MQTT를 통해 데이터가 업데이트되므로 새로고침 버튼 제거
+        // Button(onClick = { viewModel.refreshData() }) {
+        //     Text("새로고침 (10초마다 자동 갱신 예정)")
+        // }
+        Text("(데이터는 MQTT를 통해 실시간으로 업데이트 됩니다)") // 안내 메시지 추가 (선택 사항)
     }
 }
 
@@ -210,7 +216,7 @@ fun VehicleRegistrationScreen(viewModel: MainViewModel) {
     }
 }
 
-// 메인 화면 미리보기
+// DefaultPreview 수정 (MainViewModel이 파라미터 없는 생성자를 가지므로 간단히 호출 가능)
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {

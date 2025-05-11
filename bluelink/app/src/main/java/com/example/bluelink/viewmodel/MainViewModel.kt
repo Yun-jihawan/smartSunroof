@@ -1,21 +1,29 @@
 package com.example.bluelink.viewmodel
 
-import androidx.lifecycle.ViewModel
+// import android.app.Application // Application 컨텍스트 사용 제거
+import android.util.Log
+import androidx.lifecycle.ViewModel // ViewModel로 다시 변경 (Application 컨텍스트 불필요)
 import androidx.lifecycle.viewModelScope
 import com.example.bluelink.model.EnvironmentData
 import com.example.bluelink.model.VehicleState
+import com.example.bluelink.mqtt.MqttConstants
+import com.example.bluelink.mqtt.MqttManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
-// 메인 화면의 UI 상태 및 비즈니스 로직을 관리하는 ViewModel
-class MainViewModel : ViewModel() {
+// ViewModel로 변경 (Application 컨텍스트가 MqttManager의 새 구현에 필요하지 않음)
+class MainViewModel : ViewModel() { // AndroidViewModel 대신 ViewModel 사용
 
     private val _vehicleState = MutableStateFlow(VehicleState())
     val vehicleState: StateFlow<VehicleState> = _vehicleState.asStateFlow()
 
+    // ... (다른 StateFlow 선언은 동일) ...
     private val _environmentData = MutableStateFlow(EnvironmentData())
     val environmentData: StateFlow<EnvironmentData> = _environmentData.asStateFlow()
 
@@ -25,99 +33,100 @@ class MainViewModel : ViewModel() {
     private val _registeredVehicleInfo = MutableStateFlow("")
     val registeredVehicleInfo: StateFlow<String> = _registeredVehicleInfo.asStateFlow()
 
-    // QR 스캔 결과를 임시 저장 (UI에 확인용으로 표시 후 등록 시 사용)
     private val _qrScanResult = MutableStateFlow("")
     val qrScanResult: StateFlow<String> = _qrScanResult.asStateFlow()
 
+
+    // MqttManager 인스턴스 (Application 컨텍스트 없이 생성)
+    private val mqttManager: MqttManager = MqttManager()
+
     init {
-        loadInitialData()
-        startDataRefreshCycle()
+        mqttManager.connect()
+        observeMqttMessages()
+
+        viewModelScope.launch {
+            // MqttClient.connect()가 비동기 코루틴 내에서 실행되므로,
+            // 구독은 connect() 호출 후 또는 connectComplete 콜백에서 수행하는 것이 더 안정적입니다.
+            // MqttManager 내부의 connectComplete에서 구독을 시도하도록 변경했으므로 여기서는 즉시 호출.
+            subscribeToTopics()
+        }
         checkMaintenance()
     }
 
-    private fun loadInitialData() {
-        _vehicleState.value = VehicleState(sunroofStatus = "닫힘", acStatus = "꺼짐")
-        _environmentData.value = EnvironmentData(
-            indoorTemperature = 22.5, indoorHumidity = 45.0,
-            outdoorTemperature = 25.0, outdoorHumidity = 50.0,
-            airQuality = "좋음", fineDust = "낮음"
-        )
+    private fun subscribeToTopics() {
+        mqttManager.subscribe(MqttConstants.TOPIC_VEHICLE_STATUS)
+        mqttManager.subscribe(MqttConstants.TOPIC_ENVIRONMENT_DATA)
     }
 
-    private fun startDataRefreshCycle() {
-        viewModelScope.launch {
-            while (true) {
-                delay(10000)
-                refreshData()
+    private fun observeMqttMessages() {
+        mqttManager.receivedMessages
+            .onEach { (topic, message) ->
+                Log.d("MainViewModel", "MQTT 메시지 수신: $topic -> $message")
+                try {
+                    when (topic) {
+                        MqttConstants.TOPIC_VEHICLE_STATUS -> {
+                            val jsonObj = JSONObject(message)
+                            _vehicleState.value = VehicleState(
+                                sunroofStatus = jsonObj.optString("sunroof", _vehicleState.value.sunroofStatus),
+                                acStatus = jsonObj.optString("ac", _vehicleState.value.acStatus)
+                            )
+                        }
+                        MqttConstants.TOPIC_ENVIRONMENT_DATA -> {
+                            val jsonObj = JSONObject(message)
+                            _environmentData.value = EnvironmentData(
+                                indoorTemperature = jsonObj.optDouble("indoorTemp", _environmentData.value.indoorTemperature),
+                                indoorHumidity = jsonObj.optDouble("indoorHum", _environmentData.value.indoorHumidity),
+                                outdoorTemperature = jsonObj.optDouble("outdoorTemp", _environmentData.value.outdoorTemperature),
+                                outdoorHumidity = jsonObj.optDouble("outdoorHum", _environmentData.value.outdoorHumidity),
+                                airQuality = jsonObj.optString("airQuality", _environmentData.value.airQuality),
+                                fineDust = jsonObj.optString("fineDust", _environmentData.value.fineDust)
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("MainViewModel", "MQTT 메시지 파싱 오류: $message", e)
+                }
             }
-        }
-    }
-
-    fun refreshData() {
-        _vehicleState.value = _vehicleState.value.copy(
-            sunroofStatus = if (Math.random() > 0.5) "열림" else "닫힘",
-            acStatus = if (Math.random() > 0.7) "켜짐 - 냉방" else "꺼짐"
-        )
-        _environmentData.value = _environmentData.value.copy(
-            indoorTemperature = (20..25).random().toDouble() + Math.random(),
-            outdoorTemperature = (23..28).random().toDouble() + Math.random(),
-            airQuality = if (Math.random() > 0.3) "좋음" else "보통",
-            fineDust = if (Math.random() > 0.6) "보통" else "낮음"
-        )
+            .launchIn(viewModelScope)
     }
 
     fun controlSunroof(action: String) {
-        println("선루프 제어 명령: $action")
-        _vehicleState.value = _vehicleState.value.copy(
-            sunroofStatus = when(action.lowercase()){
-                "open" -> "열림"
-                "close" -> "닫힘"
-                else -> _vehicleState.value.sunroofStatus
-            }
-        )
+        val commandMessage = JSONObject().put("command", action).toString()
+        mqttManager.publish(MqttConstants.TOPIC_CONTROL_SUNROOF, commandMessage)
     }
 
     fun controlAC(action: String) {
-        println("에어컨/히터 제어 명령: $action")
-        _vehicleState.value = _vehicleState.value.copy(
-            acStatus = when(action.lowercase()){
-                "on" -> "켜짐 - 냉방"
-                "off" -> "꺼짐"
-                else -> _vehicleState.value.acStatus
-            }
-        )
+        val commandMessage = JSONObject().put("command", action).toString()
+        mqttManager.publish(MqttConstants.TOPIC_CONTROL_AC, commandMessage)
     }
 
     private fun checkMaintenance() {
         if (Math.random() < 0.3) {
-            _maintenanceNotification.value = "선루프 정기 점검이 필요합니다. (모델: GV80, 사용 시간: 500시간 초과)"
+            _maintenanceNotification.value = "선루프 정기 점검이 필요합니다."
         }
     }
 
-    // QR 스캔 결과 처리 함수
     fun processQrScanResult(contents: String?) {
         if (contents != null) {
-            _qrScanResult.value = contents // 스캔된 내용을 _qrScanResult에 저장
-            println("QR 스캔 결과 수신: $contents")
+            _qrScanResult.value = contents
         } else {
-            _qrScanResult.value = "" // 스캔 실패 또는 취소 시 초기화
-            println("QR 스캔 실패 또는 취소됨")
+            _qrScanResult.value = ""
         }
     }
 
-    // 차량 등록 함수
     fun registerVehicle(vehicleInfoFromQr: String) {
-        println("차량 등록 시도: $vehicleInfoFromQr")
-        // 실제로는 여기서 vehicleInfoFromQr를 파싱하여 서버에 등록 요청 등을 수행
-        _registeredVehicleInfo.value = vehicleInfoFromQr // 등록된 정보로 업데이트
-        _qrScanResult.value = "" // QR 스캔 결과 임시 저장 값 초기화
-        println("차량 등록 완료 (가상): $vehicleInfoFromQr")
+        _registeredVehicleInfo.value = vehicleInfoFromQr
+        _qrScanResult.value = ""
     }
 
-    // 등록된 차량 정보 초기화 함수 (다른 차량 등록을 위해)
     fun clearRegistration() {
         _registeredVehicleInfo.value = ""
         _qrScanResult.value = ""
-        println("등록된 차량 정보 초기화됨")
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        mqttManager.cleanup() // MqttManager 정리 함수 호출
+        Log.d("MainViewModel", "ViewModel 파괴, MqttManager 정리됨")
     }
 }
