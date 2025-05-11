@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Opacity
+import androidx.compose.material.icons.filled.SettingsRemote
 import androidx.compose.material.icons.filled.SignalWifi4Bar
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Thermostat
@@ -315,16 +316,13 @@ fun ControlScreen(viewModel: MainViewModel) {
     val vehicleState by viewModel.vehicleState.collectAsState()
     val sunroofCommandInProgress by viewModel.isSunroofCommandInProgress.collectAsState()
     val acCommandInProgress by viewModel.isAcCommandInProgress.collectAsState()
-    // 모드 변경 진행 상태 구독 추가
-    val sunroofModeChangeInProgress by viewModel.isSunroofModeChangeInProgress.collectAsState()
-    val acModeChangeInProgress by viewModel.isAcModeChangeInProgress.collectAsState()
+    val overallModeChangeInProgress by viewModel.isOverallModeChangeInProgress.collectAsState() // 통합 모드 변경 진행 상태
 
+    // 현재 차량의 전체 제어 모드 확인
+    val isOverallAutoMode = vehicleState.overallControlMode == "auto"
 
-    val isSunroofAutoMode = vehicleState.sunroofMode == "auto"
-    val isAcAutoMode = vehicleState.acMode == "auto"
-
-    // 어떤 명령이라도 진행 중인지 확인하는 플래그
-    val anyCommandInProgress = sunroofCommandInProgress || acCommandInProgress || sunroofModeChangeInProgress || acModeChangeInProgress
+    // 어떤 명령이라도 진행 중인지 확인하는 플래그 (통합 모드 변경 포함)
+    val anyCommandInProgress = sunroofCommandInProgress || acCommandInProgress || overallModeChangeInProgress
 
     Column(
         modifier = Modifier
@@ -343,8 +341,8 @@ fun ControlScreen(viewModel: MainViewModel) {
         val primaryButtonColors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), // 비활성화 시 버튼 배경
-            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)   // 비활성화 시 버튼 내용
+            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         )
         val secondaryButtonColors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.secondary,
@@ -363,49 +361,73 @@ fun ControlScreen(viewModel: MainViewModel) {
             disabledUncheckedTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
         )
 
-
-        // --- 선루프 제어 섹션 ---
+        // --- 통합 자동 제어 모드 섹션 ---
         Card(modifier = Modifier.fillMaxWidth(), colors = cardColors, elevation = cardElevation) {
             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("선루프 제어", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
+                Text("차량 자동 제어", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("자동 모드", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-                    if (sunroofModeChangeInProgress) { // 모드 변경 중 로딩 표시
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.SettingsRemote, // 자동 제어 아이콘 변경 또는 Autorenew 유지
+                            contentDescription = "자동 제어 모드",
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("통합 자동 모드", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    if (overallModeChangeInProgress) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
                     } else {
                         Switch(
-                            checked = isSunroofAutoMode,
+                            checked = isOverallAutoMode,
                             onCheckedChange = { checked ->
-                                viewModel.setSunroofMode(if (checked) "auto" else "manual")
+                                viewModel.setOverallControlMode(checked) // Boolean 값 직접 전달
                             },
-                            thumbContent = if (isSunroofAutoMode) { { Icon(imageVector = Icons.Filled.Autorenew, contentDescription = "자동 모드 활성", tint = MaterialTheme.colorScheme.onPrimary) } } else null,
+                            thumbContent = if (isOverallAutoMode) { { Icon(imageVector = Icons.Filled.Autorenew, contentDescription = "자동 모드 활성", tint = MaterialTheme.colorScheme.onPrimary) } } else null,
                             colors = switchColors,
-                            enabled = !anyCommandInProgress || sunroofModeChangeInProgress // 자기 자신의 모드 변경 중이거나, 다른 어떤 명령도 진행 중이지 않을 때만 활성화 (좀 더 세밀한 제어 가능)
-                            // 또는 간단하게 enabled = !anyCommandInProgress
+                            enabled = !anyCommandInProgress || overallModeChangeInProgress // 다른 명령이 없거나, 자기 자신의 변경 중일 때만
                         )
                     }
                 }
-                Text("현재 선루프 모드: ${if(isSunroofAutoMode) "자동" else "수동"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "현재 차량 모드: ${if(isOverallAutoMode) "자동 제어" else "수동 제어"}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
+
+        // --- 선루프 수동 제어 섹션 ---
+        Card(modifier = Modifier.fillMaxWidth(), colors = cardColors, elevation = cardElevation) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "선루프 수동 제어 ${if (isOverallAutoMode) "(자동 모드 활성 중)" else ""}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (isOverallAutoMode) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Button(
                         onClick = { viewModel.controlSunroof("open") },
-                        enabled = !isSunroofAutoMode && !anyCommandInProgress, // 자동 모드 아니고, 어떤 명령도 진행 중이지 않을 때
+                        enabled = !isOverallAutoMode && !anyCommandInProgress, // 자동 모드 아니고, 어떤 명령도 진행 중이지 않을 때
                         shape = buttonShape, colors = primaryButtonColors
                     ) { Text("선루프 열기") }
                     Button(
                         onClick = { viewModel.controlSunroof("close") },
-                        enabled = !isSunroofAutoMode && !anyCommandInProgress,
+                        enabled = !isOverallAutoMode && !anyCommandInProgress,
                         shape = buttonShape, colors = secondaryButtonColors
                     ) { Text("선루프 닫기") }
                 }
-                if (sunroofCommandInProgress) { // 수동 제어 진행 중 로딩 표시
+                if (sunroofCommandInProgress) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
                     Text("선루프 제어 중...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                 }
@@ -413,45 +435,31 @@ fun ControlScreen(viewModel: MainViewModel) {
             }
         }
 
-        // --- 에어컨 제어 섹션 ---
+        // --- 에어컨 수동 제어 섹션 ---
         Card(modifier = Modifier.fillMaxWidth(), colors = cardColors, elevation = cardElevation) {
-            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("에어컨 제어", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("자동 모드", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-                    if (acModeChangeInProgress) { // 모드 변경 중 로딩 표시
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
-                    } else {
-                        Switch(
-                            checked = isAcAutoMode,
-                            onCheckedChange = { checked ->
-                                viewModel.setAcMode(if (checked) "auto" else "manual")
-                            },
-                            thumbContent = if (isAcAutoMode) { { Icon(imageVector = Icons.Filled.Autorenew, contentDescription = "자동 모드 활성", tint = MaterialTheme.colorScheme.onPrimary) } } else null,
-                            colors = switchColors,
-                            enabled = !anyCommandInProgress || acModeChangeInProgress
-                        )
-                    }
-                }
-                Text("현재 에어컨 모드: ${if(isAcAutoMode) "자동" else "수동"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(modifier = Modifier.height(4.dp))
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "에어컨 수동 제어 ${if (isOverallAutoMode) "(자동 모드 활성 중)" else ""}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (isOverallAutoMode) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Button(
                         onClick = { viewModel.controlAC("on") },
-                        enabled = !isAcAutoMode && !anyCommandInProgress,
+                        enabled = !isOverallAutoMode && !anyCommandInProgress,
                         shape = buttonShape, colors = primaryButtonColors
                     ) { Text("에어컨 켜기") }
                     Button(
                         onClick = { viewModel.controlAC("off") },
-                        enabled = !isAcAutoMode && !anyCommandInProgress,
+                        enabled = !isOverallAutoMode && !anyCommandInProgress,
                         shape = buttonShape, colors = secondaryButtonColors
                     ) { Text("에어컨 끄기") }
                 }
-                if (acCommandInProgress) { // 수동 제어 진행 중 로딩 표시
+                if (acCommandInProgress) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
                     Text("에어컨 제어 중...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                 }
