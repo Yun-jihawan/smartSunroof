@@ -24,52 +24,51 @@ import org.json.JSONObject
 
 class MainViewModel : ViewModel() {
 
+    // ... (기존 StateFlow 선언들 대부분 유지) ...
     private val _vehicleState = MutableStateFlow(VehicleState())
     val vehicleState: StateFlow<VehicleState> = _vehicleState.asStateFlow()
 
-    private val _environmentData = MutableStateFlow(EnvironmentData())
-    val environmentData: StateFlow<EnvironmentData> = _environmentData.asStateFlow()
-
-    private val _maintenanceNotification = MutableStateFlow("")
-    val maintenanceNotification: StateFlow<String> = _maintenanceNotification.asStateFlow()
-
-    private val _sunroofUsage = MutableStateFlow(SunroofUsageData("Model_S", 750, 3200))
-    val sunroofUsage: StateFlow<SunroofUsageData> = _sunroofUsage.asStateFlow()
-
-    private val _showReservationForm = MutableStateFlow(false)
-    val showReservationForm: StateFlow<Boolean> = _showReservationForm.asStateFlow()
-
-    private val _reservationDetails = MutableStateFlow(ReservationDetails())
-    val reservationDetails: StateFlow<ReservationDetails> = _reservationDetails.asStateFlow()
-
-    private val _reservationStatusMessage = MutableStateFlow("")
-    val reservationStatusMessage: StateFlow<String> = _reservationStatusMessage.asStateFlow()
-
-    val availableServiceCenters = listOf("블루링크 강남점", "블루링크 수원점", "블루링크 부산점")
-
-    private val _isSunroofCommandInProgress = MutableStateFlow(false)
+    // --- 제어 명령 진행 상태 ---
+    private val _isSunroofCommandInProgress = MutableStateFlow(false) // 수동 제어 (열기/닫기)
     val isSunroofCommandInProgress: StateFlow<Boolean> = _isSunroofCommandInProgress.asStateFlow()
-
-    private val _isAcCommandInProgress = MutableStateFlow(false)
+    private val _isAcCommandInProgress = MutableStateFlow(false) // 수동 제어 (켜기/끄기)
     val isAcCommandInProgress: StateFlow<Boolean> = _isAcCommandInProgress.asStateFlow()
+
+    // 모드 변경 진행 상태 추가
+    private val _isSunroofModeChangeInProgress = MutableStateFlow(false)
+    val isSunroofModeChangeInProgress: StateFlow<Boolean> = _isSunroofModeChangeInProgress.asStateFlow()
+    private val _isAcModeChangeInProgress = MutableStateFlow(false)
+    val isAcModeChangeInProgress: StateFlow<Boolean> = _isAcModeChangeInProgress.asStateFlow()
 
     private var sunroofControlJob: Job? = null
     private var acControlJob: Job? = null
+    private var sunroofModeChangeJob: Job? = null // 모드 변경 타임아웃 Job
+    private var acModeChangeJob: Job? = null     // 모드 변경 타임아웃 Job
 
+
+    // ... (나머지 StateFlow 선언 및 init, MQTT 관련 함수들은 이전 답변의 최종본을 기반으로 함) ...
+    private val _environmentData = MutableStateFlow(EnvironmentData())
+    val environmentData: StateFlow<EnvironmentData> = _environmentData.asStateFlow()
+    private val _maintenanceNotification = MutableStateFlow("")
+    val maintenanceNotification: StateFlow<String> = _maintenanceNotification.asStateFlow()
+    private val _sunroofUsage = MutableStateFlow(SunroofUsageData("Model_S", 750, 3200))
+    val sunroofUsage: StateFlow<SunroofUsageData> = _sunroofUsage.asStateFlow()
+    private val _showReservationForm = MutableStateFlow(false)
+    val showReservationForm: StateFlow<Boolean> = _showReservationForm.asStateFlow()
+    private val _reservationDetails = MutableStateFlow(ReservationDetails())
+    val reservationDetails: StateFlow<ReservationDetails> = _reservationDetails.asStateFlow()
+    private val _reservationStatusMessage = MutableStateFlow("")
+    val reservationStatusMessage: StateFlow<String> = _reservationStatusMessage.asStateFlow()
+    val availableServiceCenters = listOf("블루링크 강남점", "블루링크 수원점", "블루링크 부산점")
     private val _registeredVehicleInfo = MutableStateFlow("")
     val registeredVehicleInfo: StateFlow<String> = _registeredVehicleInfo.asStateFlow()
-
     private val _currentVehicleId = MutableStateFlow<String?>(null)
     val currentVehicleId: StateFlow<String?> = _currentVehicleId.asStateFlow()
-
     private val _qrScanResult = MutableStateFlow("")
     val qrScanResult: StateFlow<String> = _qrScanResult.asStateFlow()
-
     private val mqttManager: MqttManager = MqttManager()
-
     private val _mqttConnectionState = MutableStateFlow(MqttConnectionState.IDLE)
     val mqttConnectionState: StateFlow<MqttConnectionState> = _mqttConnectionState.asStateFlow()
-
     private val _mqttErrorEventChannel = Channel<String>()
     val mqttErrorEvent = _mqttErrorEventChannel.receiveAsFlow()
 
@@ -130,8 +129,9 @@ class MainViewModel : ViewModel() {
                             topic == MqttConstants.getEnvironmentTopic(vehicleId) -> handleEnvironmentDataMessage(message)
                             topic == MqttConstants.getControlSunroofResultTopic(vehicleId) -> handleControlResultMessage(message, "선루프", _isSunroofCommandInProgress, sunroofControlJob)
                             topic == MqttConstants.getControlAcResultTopic(vehicleId) -> handleControlResultMessage(message, "에어컨", _isAcCommandInProgress, acControlJob)
-                            topic == MqttConstants.getSetSunroofModeResultTopic(vehicleId) -> handleControlResultMessage(message, "선루프 모드", null, null)
-                            topic == MqttConstants.getSetAcModeResultTopic(vehicleId) -> handleControlResultMessage(message, "에어컨 모드", null, null)
+                            // 모드 변경 결과에 대한 InProgress 상태 연결
+                            topic == MqttConstants.getSetSunroofModeResultTopic(vehicleId) -> handleControlResultMessage(message, "선루프 모드", _isSunroofModeChangeInProgress, sunroofModeChangeJob)
+                            topic == MqttConstants.getSetAcModeResultTopic(vehicleId) -> handleControlResultMessage(message, "에어컨 모드", _isAcModeChangeInProgress, acModeChangeJob)
                             else -> Log.w("MainViewModel", "처리되지 않은 토픽 메시지 수신: $topic")
                         }
                     } ?: Log.w("MainViewModel", "등록된 차량 ID 없음. 메시지 무시: $topic")
@@ -143,9 +143,8 @@ class MainViewModel : ViewModel() {
             .launchIn(viewModelScope)
     }
 
-    private fun handleVehicleStatusMessage(message: String) {
+    private fun handleVehicleStatusMessage(message: String) { /* 이전과 동일 */
         val jsonObj = JSONObject(message)
-        // MQTT 페이로드의 키 이름을 정확히 맞춰야 합니다. 예: "sunroof_status", "ac_status", "sunroof_mode", "ac_mode"
         val newSunroofStatus = jsonObj.optString("sunroof_status", _vehicleState.value.sunroofStatus)
         val newAcStatus = jsonObj.optString("ac_status", _vehicleState.value.acStatus)
         val newSunroofMode = jsonObj.optString("sunroof_mode", _vehicleState.value.sunroofMode)
@@ -159,8 +158,7 @@ class MainViewModel : ViewModel() {
         )
         Log.d("MainViewModel", "VehicleState 업데이트 (MQTT): ${_vehicleState.value}")
     }
-
-    private fun handleEnvironmentDataMessage(message: String) {
+    private fun handleEnvironmentDataMessage(message: String) { /* 이전과 동일 */
         val jsonObj = JSONObject(message)
         _environmentData.value = EnvironmentData(
             indoorTemperature = jsonObj.optDouble("indoorTemp", _environmentData.value.indoorTemperature),
@@ -175,20 +173,20 @@ class MainViewModel : ViewModel() {
     private fun handleControlResultMessage(
         message: String,
         controlType: String,
-        inProgressState: MutableStateFlow<Boolean>?,
+        inProgressState: MutableStateFlow<Boolean>?, // Nullable로 변경
         controlJob: Job?
     ) {
         val jsonObj = JSONObject(message)
         val result = jsonObj.optString("result", "unknown")
-        val resultMessage = jsonObj.optString("message", "$controlType 제어 결과 수신")
+        val resultMessage = jsonObj.optString("message", "$controlType 설정 결과 수신")
 
-        inProgressState?.value = false
+        inProgressState?.value = false // 로딩 상태가 있다면 해제
         controlJob?.cancel()
 
         val feedbackMessage = if (result == "success") {
-            "$controlType: $resultMessage"
+            "$controlType 설정 성공: $resultMessage"
         } else {
-            "$controlType 제어 실패: $resultMessage (원인: ${jsonObj.optString("reason_code", "알 수 없음")})"
+            "$controlType 설정 실패: $resultMessage (사유: ${jsonObj.optString("reason_code", "알 수 없음")})"
         }
 
         Log.i("MainViewModel", feedbackMessage)
@@ -252,17 +250,10 @@ class MainViewModel : ViewModel() {
 
     fun controlSunroof(action: String) {
         val vehicleId = _currentVehicleId.value ?: return Unit.also { viewModelScope.launch { _mqttErrorEventChannel.send("차량을 먼저 등록해주세요.") } }
-        if (_mqttConnectionState.value != MqttConnectionState.CONNECTED) {
-            viewModelScope.launch { _mqttErrorEventChannel.send("서버에 연결되지 않았습니다.") }
-            return
-        }
-        if (_vehicleState.value.sunroofMode == "auto") {
-            viewModelScope.launch { _mqttErrorEventChannel.send("선루프 자동 모드 중입니다. 수동 제어를 원하시면 자동 모드를 해제해주세요.") }
-            return
-        }
-        if (_isSunroofCommandInProgress.value || _isAcCommandInProgress.value) {
-            viewModelScope.launch { _mqttErrorEventChannel.send("다른 제어 명령이 진행 중입니다.") }
-            return
+        if (_mqttConnectionState.value != MqttConnectionState.CONNECTED) { viewModelScope.launch { _mqttErrorEventChannel.send("서버에 연결되지 않았습니다.") }; return }
+        if (_vehicleState.value.sunroofMode == "auto") { viewModelScope.launch { _mqttErrorEventChannel.send("선루프 자동 모드 중입니다.") }; return }
+        if (_isSunroofCommandInProgress.value || _isAcCommandInProgress.value || _isSunroofModeChangeInProgress.value || _isAcModeChangeInProgress.value) { // 모든 진행 상태 확인
+            viewModelScope.launch { _mqttErrorEventChannel.send("다른 명령이 진행 중입니다.") }; return
         }
 
         val topic = MqttConstants.getControlSunroofTopic(vehicleId)
@@ -270,7 +261,6 @@ class MainViewModel : ViewModel() {
         mqttManager.publish(topic, commandMessage)
         _isSunroofCommandInProgress.value = true
         Log.d("MainViewModel", "선루프 수동 제어 명령 발행 ($vehicleId): $action")
-        // Snackbar 메시지는 결과 응답 또는 타임아웃 시 handleControlResultMessage 또는 타임아웃 로직에서 처리
 
         sunroofControlJob?.cancel()
         sunroofControlJob = viewModelScope.launch {
@@ -278,24 +268,17 @@ class MainViewModel : ViewModel() {
             if (_isSunroofCommandInProgress.value) {
                 _isSunroofCommandInProgress.value = false
                 Log.w("MainViewModel", "선루프 제어 응답 시간 초과 ($vehicleId)")
-                _mqttErrorEventChannel.trySend("선루프 제어 응답 시간 초과. 차량 상태를 확인해주세요.")
+                _mqttErrorEventChannel.trySend("선루프 제어 응답이 없습니다.")
             }
         }
     }
 
     fun controlAC(action: String) {
         val vehicleId = _currentVehicleId.value ?: return Unit.also { viewModelScope.launch { _mqttErrorEventChannel.send("차량을 먼저 등록해주세요.") } }
-        if (_mqttConnectionState.value != MqttConnectionState.CONNECTED) {
-            viewModelScope.launch { _mqttErrorEventChannel.send("서버에 연결되지 않았습니다.") }
-            return
-        }
-        if (_vehicleState.value.acMode == "auto") {
-            viewModelScope.launch { _mqttErrorEventChannel.send("에어컨 자동 모드 중입니다. 수동 제어를 원하시면 자동 모드를 해제해주세요.") }
-            return
-        }
-        if (_isSunroofCommandInProgress.value || _isAcCommandInProgress.value) {
-            viewModelScope.launch { _mqttErrorEventChannel.send("다른 제어 명령이 진행 중입니다.") }
-            return
+        if (_mqttConnectionState.value != MqttConnectionState.CONNECTED) { viewModelScope.launch { _mqttErrorEventChannel.send("서버에 연결되지 않았습니다.") }; return }
+        if (_vehicleState.value.acMode == "auto") { viewModelScope.launch { _mqttErrorEventChannel.send("에어컨 자동 모드 중입니다.") }; return }
+        if (_isSunroofCommandInProgress.value || _isAcCommandInProgress.value || _isSunroofModeChangeInProgress.value || _isAcModeChangeInProgress.value) {
+            viewModelScope.launch { _mqttErrorEventChannel.send("다른 명령이 진행 중입니다.") }; return
         }
 
         val topic = MqttConstants.getControlAcTopic(vehicleId)
@@ -310,36 +293,57 @@ class MainViewModel : ViewModel() {
             if (_isAcCommandInProgress.value) {
                 _isAcCommandInProgress.value = false
                 Log.w("MainViewModel", "AC 제어 응답 시간 초과 ($vehicleId)")
-                _mqttErrorEventChannel.trySend("에어컨 제어 응답 시간 초과. 차량 상태를 확인해주세요.")
+                _mqttErrorEventChannel.trySend("에어컨 제어 응답이 없습니다.")
             }
         }
     }
 
-    fun setSunroofMode(mode: String) {
+    fun setSunroofMode(mode: String) { // mode: "auto" 또는 "manual"
         val vehicleId = _currentVehicleId.value ?: return Unit.also { viewModelScope.launch { _mqttErrorEventChannel.send("차량을 먼저 등록해주세요.") } }
-        if (_mqttConnectionState.value != MqttConnectionState.CONNECTED) {
-            viewModelScope.launch { _mqttErrorEventChannel.send("서버에 연결되지 않았습니다.") }
-            return
+        if (_mqttConnectionState.value != MqttConnectionState.CONNECTED) { viewModelScope.launch { _mqttErrorEventChannel.send("서버에 연결되지 않았습니다.") }; return }
+        if (_isSunroofCommandInProgress.value || _isAcCommandInProgress.value || _isSunroofModeChangeInProgress.value || _isAcModeChangeInProgress.value) {
+            viewModelScope.launch { _mqttErrorEventChannel.send("다른 명령이 진행 중입니다.") }; return
         }
 
         val topic = MqttConstants.getSetSunroofModeTopic(vehicleId)
-        val message = JSONObject().put("mode", mode).toString() // 예: {"mode":"auto"}
+        val message = JSONObject().put("mode", mode).toString()
         mqttManager.publish(topic, message)
+        _isSunroofModeChangeInProgress.value = true // 모드 변경 로딩 시작
         Log.d("MainViewModel", "선루프 모드 변경 명령 발행 ($vehicleId): $mode")
-        // 결과는 MQTT result 토픽을 통해 수신 후 handleControlResultMessage에서 Snackbar로 알림
+
+        sunroofModeChangeJob?.cancel()
+        sunroofModeChangeJob = viewModelScope.launch {
+            delay(10000) // 10초 타임아웃
+            if (_isSunroofModeChangeInProgress.value) {
+                _isSunroofModeChangeInProgress.value = false
+                Log.w("MainViewModel", "선루프 모드 변경 응답 시간 초과 ($vehicleId)")
+                _mqttErrorEventChannel.trySend("선루프 모드 변경 응답이 없습니다.")
+            }
+        }
     }
 
-    fun setAcMode(mode: String) {
+    fun setAcMode(mode: String) { // mode: "auto" 또는 "manual"
         val vehicleId = _currentVehicleId.value ?: return Unit.also { viewModelScope.launch { _mqttErrorEventChannel.send("차량을 먼저 등록해주세요.") } }
-        if (_mqttConnectionState.value != MqttConnectionState.CONNECTED) {
-            viewModelScope.launch { _mqttErrorEventChannel.send("서버에 연결되지 않았습니다.") }
-            return
+        if (_mqttConnectionState.value != MqttConnectionState.CONNECTED) { viewModelScope.launch { _mqttErrorEventChannel.send("서버에 연결되지 않았습니다.") }; return }
+        if (_isSunroofCommandInProgress.value || _isAcCommandInProgress.value || _isSunroofModeChangeInProgress.value || _isAcModeChangeInProgress.value) {
+            viewModelScope.launch { _mqttErrorEventChannel.send("다른 명령이 진행 중입니다.") }; return
         }
 
         val topic = MqttConstants.getSetAcModeTopic(vehicleId)
-        val message = JSONObject().put("mode", mode).toString() // 예: {"mode":"auto"}
+        val message = JSONObject().put("mode", mode).toString()
         mqttManager.publish(topic, message)
+        _isAcModeChangeInProgress.value = true // 모드 변경 로딩 시작
         Log.d("MainViewModel", "AC 모드 변경 명령 발행 ($vehicleId): $mode")
+
+        acModeChangeJob?.cancel()
+        acModeChangeJob = viewModelScope.launch {
+            delay(10000) // 10초 타임아웃
+            if (_isAcModeChangeInProgress.value) {
+                _isAcModeChangeInProgress.value = false
+                Log.w("MainViewModel", "AC 모드 변경 응답 시간 초과 ($vehicleId)")
+                _mqttErrorEventChannel.trySend("AC 모드 변경 응답이 없습니다.")
+            }
+        }
     }
 
     fun checkMaintenance() {
@@ -383,6 +387,8 @@ class MainViewModel : ViewModel() {
         super.onCleared()
         sunroofControlJob?.cancel()
         acControlJob?.cancel()
+        sunroofModeChangeJob?.cancel() // 추가된 Job 취소
+        acModeChangeJob?.cancel()     // 추가된 Job 취소
         mqttManager.cleanup()
         Log.d("MainViewModel", "ViewModel 파괴, MqttManager 정리됨")
     }
