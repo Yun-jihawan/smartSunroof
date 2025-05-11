@@ -1,5 +1,6 @@
 [versions]
 agp = "8.9.2"
+animation = "1.8.1"
 kotlin = "2.0.21"
 coreKtx = "1.16.0"
 junit = "4.13.2"
@@ -12,6 +13,7 @@ orgEclipsePahoClientMqttv3 = "1.2.5"
 zxingAndroidEmbedded = "4.3.0"
 
 [libraries]
+androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
