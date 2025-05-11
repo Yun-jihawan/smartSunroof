@@ -16,7 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Schedule // 아이콘 import 추가
+import androidx.compose.material.icons.filled.AccessTime // 아이콘 import 추가
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +33,19 @@ import com.journeyapps.barcodescanner.ScanOptions
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.compose.material.icons.filled.AcUnit // 에어컨 아이콘
+import androidx.compose.material.icons.filled.Cloud // 공기질/미세먼지 아이콘 (예시)
+import androidx.compose.material.icons.filled.Thermostat // 온도 아이콘
+import androidx.compose.material.icons.filled.WbSunny // 선루프 아이콘 (예시, 또는 다른 적절한 아이콘)
+import androidx.compose.material.icons.filled.Opacity // 습도 아이콘
+import androidx.compose.ui.graphics.Color // 직접 Color 사용을 위해
+import androidx.compose.ui.text.font.FontWeight // FontWeight 사용
+import com.example.bluelink.ui.theme.StatusBad // Color.kt에 정의된 색상 사용 시
+import com.example.bluelink.ui.theme.StatusGood
+import com.example.bluelink.ui.theme.StatusNormal
+import com.example.bluelink.ui.theme.StatusUnknown
 
+// ... (MainActivity 클래스 및 다른 Composable 함수들은 이전 답변의 최종본과 동일하게 유지) ...
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
 
@@ -77,36 +89,121 @@ fun MainScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
     }
 }
 
+
+// 모니터링 화면 - 시각화 개선
 @Composable
 fun MonitoringScreen(viewModel: MainViewModel) {
     val vehicleState by viewModel.vehicleState.collectAsState()
     val environmentData by viewModel.environmentData.collectAsState()
 
+    // 공기질/미세먼지 상태에 따른 색상 결정 함수
+    @Composable
+    fun getStatusColor(status: String): Color {
+        return when (status.lowercase()) {
+            "좋음", "낮음" -> StatusGood // 초록색 (Color.kt 또는 직접 정의)
+            "보통" -> StatusNormal    // 주황색
+            "나쁨", "높음", "매우 높음" -> StatusBad // 빨간색
+            else -> StatusUnknown       // 회색 (Color.Gray)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .verticalScroll(rememberScrollState()), // 스크롤 유지
+        horizontalAlignment = Alignment.Start, // 왼쪽 정렬로 변경하여 아이콘과 텍스트 배치 용이하게
+        verticalArrangement = Arrangement.spacedBy(12.dp) // 항목 간 간격 추가
     ) {
-        Text("차량 모니터링", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("선루프 상태: ${vehicleState.sunroofStatus}")
-        Text("에어컨 상태: ${vehicleState.acStatus}")
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("실내 온도: ${String.format("%.1f", environmentData.indoorTemperature)}°C, 습도: ${String.format("%.1f", environmentData.indoorHumidity)}%")
-        Text("실외 온도: ${String.format("%.1f", environmentData.outdoorTemperature)}°C, 습도: ${String.format("%.1f", environmentData.outdoorHumidity)}%")
-        Text("공기질: ${environmentData.airQuality}, 미세먼지: ${environmentData.fineDust}")
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("(데이터는 MQTT를 통해 실시간으로 업데이트 됩니다)")
+        Text(
+            "차량 모니터링",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.align(Alignment.CenterHorizontally) // 제목만 중앙 정렬
+        )
+        Spacer(modifier = Modifier.height(16.dp)) // 제목 아래 추가 간격
+
+        // 정보 항목 표시용 Composable 함수 (재사용을 위해)
+        @Composable
+        fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String, valueColor: Color = LocalContentColor.current) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = label, modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("$label: ", fontWeight = FontWeight.Bold)
+                Text(value, color = valueColor)
+            }
+        }
+
+        InfoRow(
+            icon = Icons.Filled.WbSunny, // 또는 다른 적절한 선루프 아이콘
+            label = "선루프 상태",
+            value = vehicleState.sunroofStatus
+        )
+        InfoRow(
+            icon = Icons.Filled.AcUnit,
+            label = "에어컨 상태",
+            value = vehicleState.acStatus
+        )
+
+        Divider(modifier = Modifier.padding(vertical = 8.dp)) // 구분선
+
+        InfoRow(
+            icon = Icons.Filled.Thermostat,
+            label = "실내 온도",
+            value = "${String.format("%.1f", environmentData.indoorTemperature)}°C"
+        )
+        InfoRow(
+            icon = Icons.Filled.Opacity,
+            label = "실내 습도",
+            value = "${String.format("%.1f", environmentData.indoorHumidity)}%"
+        )
+
+        Spacer(modifier = Modifier.height(8.dp)) // 그룹 간 간격
+
+        InfoRow(
+            icon = Icons.Filled.Thermostat, // 외부 온도 아이콘도 동일하게 사용하거나 다른 아이콘 사용
+            label = "실외 온도",
+            value = "${String.format("%.1f", environmentData.outdoorTemperature)}°C"
+        )
+        InfoRow(
+            icon = Icons.Filled.Opacity, // 외부 습도 아이콘도 동일하게 사용
+            label = "실외 습도",
+            value = "${String.format("%.1f", environmentData.outdoorHumidity)}%"
+        )
+
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+        InfoRow(
+            icon = Icons.Filled.Cloud, // 공기질 아이콘 (예시)
+            label = "공기질",
+            value = environmentData.airQuality,
+            valueColor = getStatusColor(environmentData.airQuality)
+        )
+        InfoRow(
+            icon = Icons.Filled.Cloud, // 미세먼지 아이콘 (예시)
+            label = "미세먼지",
+            value = environmentData.fineDust,
+            valueColor = getStatusColor(environmentData.fineDust)
+        )
+
+        Spacer(modifier = Modifier.weight(1f)) // 하단 안내 메시지를 아래로 밀기 위한 Spacer
+
+        Text(
+            "(데이터는 MQTT를 통해 실시간으로 업데이트 됩니다)",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
     }
 }
 
+
+// ControlScreen, VehicleRegistrationScreen, MaintenanceScreen, ReservationForm, Preview 함수들은
+// 이전 답변에서 제공한 최종본과 동일하게 유지합니다.
+// (여기서는 MonitoringScreen의 변경에만 집중)
+
+// ... ControlScreen Composable ...
 @Composable
 fun ControlScreen(viewModel: MainViewModel) {
     val vehicleState by viewModel.vehicleState.collectAsState()
-    // collectAsState()를 사용하여 StateFlow의 값을 가져옵니다.
     val sunroofCommandInProgress by viewModel.isSunroofCommandInProgress.collectAsState()
     val acCommandInProgress by viewModel.isAcCommandInProgress.collectAsState()
     val context = LocalContext.current
@@ -128,7 +225,6 @@ fun ControlScreen(viewModel: MainViewModel) {
                     viewModel.controlSunroof("open")
                     Toast.makeText(context, "선루프 열기 명령 전송", Toast.LENGTH_SHORT).show()
                 },
-                // .value를 사용하여 Boolean 값을 가져와서 ! 연산자 사용
                 enabled = !sunroofCommandInProgress && !acCommandInProgress
             ) {
                 Text("선루프 열기")
@@ -183,6 +279,7 @@ fun ControlScreen(viewModel: MainViewModel) {
     }
 }
 
+// ... VehicleRegistrationScreen Composable ...
 @Composable
 fun VehicleRegistrationScreen(viewModel: MainViewModel) {
     val registeredVehicleInfo by viewModel.registeredVehicleInfo.collectAsState()
@@ -236,6 +333,7 @@ fun VehicleRegistrationScreen(viewModel: MainViewModel) {
     }
 }
 
+// ... MaintenanceScreen Composable ...
 @Composable
 fun MaintenanceScreen(viewModel: MainViewModel) {
     val maintenanceNotification by viewModel.maintenanceNotification.collectAsState()
@@ -277,6 +375,7 @@ fun MaintenanceScreen(viewModel: MainViewModel) {
     }
 }
 
+// ... ReservationForm Composable ...
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationForm(viewModel: MainViewModel) {
@@ -335,7 +434,7 @@ fun ReservationForm(viewModel: MainViewModel) {
             readOnly = true,
             trailingIcon = {
                 Icon(
-                    Icons.Filled.Schedule, // 수정: Schedule 아이콘 사용
+                    Icons.Filled.AccessTime, // AccessTime 아이콘 사용 (Schedule 대신)
                     contentDescription = "시간 선택",
                     modifier = Modifier.clickable { timePickerDialog.show() }
                 )
@@ -356,7 +455,7 @@ fun ReservationForm(viewModel: MainViewModel) {
             DropdownMenu(
                 expanded = serviceCenterExpanded,
                 onDismissRequest = { serviceCenterExpanded = false },
-                modifier = Modifier.fillMaxWidth(0.8f) // Use fillMaxWidth with a fraction
+                modifier = Modifier.fillMaxWidth(0.8f)
             ) {
                 availableServiceCenters.forEach { center ->
                     DropdownMenuItem(
@@ -404,6 +503,15 @@ fun ReservationForm(viewModel: MainViewModel) {
                 Text("취소")
             }
         }
+    }
+}
+
+// ... Preview 함수들 ...
+@Preview(showBackground = true, name = "Monitoring Screen Preview")
+@Composable
+fun MonitoringScreenPreview() {
+    BluelinkTheme {
+        MonitoringScreen(viewModel = MainViewModel())
     }
 }
 
