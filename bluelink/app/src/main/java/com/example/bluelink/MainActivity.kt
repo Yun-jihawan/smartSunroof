@@ -8,44 +8,50 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.CloudOff // 연결 끊김 아이콘
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.AccessTime // 아이콘 import 추가
+import androidx.compose.material.icons.filled.SignalWifi4Bar // 연결됨 아이콘
+import androidx.compose.material.icons.filled.Sync // 연결 중 아이콘
+import androidx.compose.material.icons.filled.Error // 오류 아이콘
+import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.bluelink.mqtt.MqttConnectionState // MqttConnectionState import
 import com.example.bluelink.ui.theme.BluelinkTheme
-import com.example.bluelink.viewmodel.MainViewModel
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
-import androidx.compose.material.icons.filled.AcUnit // 에어컨 아이콘
-import androidx.compose.material.icons.filled.Cloud // 공기질/미세먼지 아이콘 (예시)
-import androidx.compose.material.icons.filled.Thermostat // 온도 아이콘
-import androidx.compose.material.icons.filled.WbSunny // 선루프 아이콘 (예시, 또는 다른 적절한 아이콘)
-import androidx.compose.material.icons.filled.Opacity // 습도 아이콘
-import androidx.compose.ui.graphics.Color // 직접 Color 사용을 위해
-import androidx.compose.ui.text.font.FontWeight // FontWeight 사용
-import com.example.bluelink.ui.theme.StatusBad // Color.kt에 정의된 색상 사용 시
+import com.example.bluelink.ui.theme.StatusBad
 import com.example.bluelink.ui.theme.StatusGood
 import com.example.bluelink.ui.theme.StatusNormal
 import com.example.bluelink.ui.theme.StatusUnknown
+import com.example.bluelink.viewmodel.MainViewModel
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
-// ... (MainActivity 클래스 및 다른 Composable 함수들은 이전 답변의 최종본과 동일하게 유지) ...
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
 
@@ -53,7 +59,26 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             BluelinkTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                // Snackbar를 사용하기 위해 ScaffoldState 준비
+                val snackbarHostState = remember { SnackbarHostState() }
+                val scope = rememberCoroutineScope() // Snackbar를 보여주기 위한 코루틴 스코프
+
+                // ViewModel의 오류 이벤트를 구독하여 Snackbar로 표시
+                LaunchedEffect(key1 = mainViewModel.mqttErrorEvent) {
+                    mainViewModel.mqttErrorEvent.collect { errorMessage ->
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = errorMessage,
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                }
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    snackbarHost = { SnackbarHost(snackbarHostState) } // SnackbarHost 추가
+                ) { innerPadding ->
                     MainScreen(
                         modifier = Modifier.padding(innerPadding),
                         viewModel = mainViewModel
@@ -64,12 +89,74 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// MQTT 연결 상태 표시 Composable
+@Composable
+fun MqttStatusIndicator(viewModel: MainViewModel) {
+    val connectionState by viewModel.mqttConnectionState.collectAsState()
+    val statusText: String
+    val indicatorColor: Color
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+
+    when (connectionState) {
+        MqttConnectionState.IDLE -> {
+            statusText = "MQTT 연결 대기"
+            indicatorColor = Color.Gray
+            icon = Icons.Filled.CloudOff
+        }
+        MqttConnectionState.CONNECTING -> {
+            statusText = "MQTT 연결 중..."
+            indicatorColor = MaterialTheme.colorScheme.primary // 테마 색상 사용
+            icon = Icons.Filled.Sync
+        }
+        MqttConnectionState.CONNECTED -> {
+            statusText = "MQTT 연결됨"
+            indicatorColor = StatusGood // 초록색 계열
+            icon = Icons.Filled.SignalWifi4Bar
+        }
+        MqttConnectionState.DISCONNECTED -> {
+            statusText = "MQTT 연결 끊김"
+            indicatorColor = Color.DarkGray
+            icon = Icons.Filled.CloudOff
+        }
+        MqttConnectionState.ERROR -> {
+            statusText = "MQTT 연결 오류"
+            indicatorColor = StatusBad // 빨간색 계열
+            icon = Icons.Filled.Error
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(indicatorColor.copy(alpha = 0.1f)) // 배경색 약간 투명하게
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(icon, contentDescription = "MQTT Status Icon", tint = indicatorColor, modifier = Modifier.size(18.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(statusText, color = indicatorColor, style = MaterialTheme.typography.bodySmall)
+        if (connectionState == MqttConnectionState.ERROR || connectionState == MqttConnectionState.DISCONNECTED) {
+            Spacer(modifier = Modifier.width(8.dp))
+            TextButton(onClick = { viewModel.attemptMqttReconnect() },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text("재연결", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+
 @Composable
 fun MainScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
     val tabs = listOf("모니터링", "제어", "유지보수", "차량 등록")
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     Column(modifier = modifier.fillMaxSize()) {
+        // MQTT 연결 상태 표시줄 추가
+        MqttStatusIndicator(viewModel = viewModel)
+
         TabRow(selectedTabIndex = selectedTabIndex) {
             tabs.forEachIndexed { index, title ->
                 Tab(
@@ -89,21 +176,21 @@ fun MainScreen(modifier: Modifier = Modifier, viewModel: MainViewModel) {
     }
 }
 
-
-// 모니터링 화면 - 시각화 개선
+// MonitoringScreen, ControlScreen, VehicleRegistrationScreen, MaintenanceScreen, ReservationForm, Preview 함수들은
+// 이전 답변에서 제공한 최종본과 동일하게 유지합니다.
+// (MainActivity.kt 파일의 나머지 부분은 이전 답변의 최종본을 참고하여 그대로 두시면 됩니다.)
 @Composable
 fun MonitoringScreen(viewModel: MainViewModel) {
     val vehicleState by viewModel.vehicleState.collectAsState()
     val environmentData by viewModel.environmentData.collectAsState()
 
-    // 공기질/미세먼지 상태에 따른 색상 결정 함수
     @Composable
     fun getStatusColor(status: String): Color {
         return when (status.lowercase()) {
-            "좋음", "낮음" -> StatusGood // 초록색 (Color.kt 또는 직접 정의)
-            "보통" -> StatusNormal    // 주황색
-            "나쁨", "높음", "매우 높음" -> StatusBad // 빨간색
-            else -> StatusUnknown       // 회색 (Color.Gray)
+            "좋음", "낮음" -> StatusGood
+            "보통" -> StatusNormal
+            "나쁨", "높음", "매우 높음" -> StatusBad
+            else -> StatusUnknown
         }
     }
 
@@ -111,18 +198,17 @@ fun MonitoringScreen(viewModel: MainViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()), // 스크롤 유지
-        horizontalAlignment = Alignment.Start, // 왼쪽 정렬로 변경하여 아이콘과 텍스트 배치 용이하게
-        verticalArrangement = Arrangement.spacedBy(12.dp) // 항목 간 간격 추가
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
             "차량 모니터링",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.align(Alignment.CenterHorizontally) // 제목만 중앙 정렬
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
-        Spacer(modifier = Modifier.height(16.dp)) // 제목 아래 추가 간격
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // 정보 항목 표시용 Composable 함수 (재사용을 위해)
         @Composable
         fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String, valueColor: Color = LocalContentColor.current) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -134,7 +220,7 @@ fun MonitoringScreen(viewModel: MainViewModel) {
         }
 
         InfoRow(
-            icon = Icons.Filled.WbSunny, // 또는 다른 적절한 선루프 아이콘
+            icon = Icons.Filled.WbSunny,
             label = "선루프 상태",
             value = vehicleState.sunroofStatus
         )
@@ -144,7 +230,7 @@ fun MonitoringScreen(viewModel: MainViewModel) {
             value = vehicleState.acStatus
         )
 
-        Divider(modifier = Modifier.padding(vertical = 8.dp)) // 구분선
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
 
         InfoRow(
             icon = Icons.Filled.Thermostat,
@@ -157,15 +243,15 @@ fun MonitoringScreen(viewModel: MainViewModel) {
             value = "${String.format("%.1f", environmentData.indoorHumidity)}%"
         )
 
-        Spacer(modifier = Modifier.height(8.dp)) // 그룹 간 간격
+        Spacer(modifier = Modifier.height(8.dp))
 
         InfoRow(
-            icon = Icons.Filled.Thermostat, // 외부 온도 아이콘도 동일하게 사용하거나 다른 아이콘 사용
+            icon = Icons.Filled.Thermostat,
             label = "실외 온도",
             value = "${String.format("%.1f", environmentData.outdoorTemperature)}°C"
         )
         InfoRow(
-            icon = Icons.Filled.Opacity, // 외부 습도 아이콘도 동일하게 사용
+            icon = Icons.Filled.Opacity,
             label = "실외 습도",
             value = "${String.format("%.1f", environmentData.outdoorHumidity)}%"
         )
@@ -173,19 +259,19 @@ fun MonitoringScreen(viewModel: MainViewModel) {
         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
         InfoRow(
-            icon = Icons.Filled.Cloud, // 공기질 아이콘 (예시)
+            icon = Icons.Filled.Cloud,
             label = "공기질",
             value = environmentData.airQuality,
             valueColor = getStatusColor(environmentData.airQuality)
         )
         InfoRow(
-            icon = Icons.Filled.Cloud, // 미세먼지 아이콘 (예시)
+            icon = Icons.Filled.Cloud,
             label = "미세먼지",
             value = environmentData.fineDust,
             valueColor = getStatusColor(environmentData.fineDust)
         )
 
-        Spacer(modifier = Modifier.weight(1f)) // 하단 안내 메시지를 아래로 밀기 위한 Spacer
+        Spacer(modifier = Modifier.weight(1f))
 
         Text(
             "(데이터는 MQTT를 통해 실시간으로 업데이트 됩니다)",
@@ -195,12 +281,6 @@ fun MonitoringScreen(viewModel: MainViewModel) {
     }
 }
 
-
-// ControlScreen, VehicleRegistrationScreen, MaintenanceScreen, ReservationForm, Preview 함수들은
-// 이전 답변에서 제공한 최종본과 동일하게 유지합니다.
-// (여기서는 MonitoringScreen의 변경에만 집중)
-
-// ... ControlScreen Composable ...
 @Composable
 fun ControlScreen(viewModel: MainViewModel) {
     val vehicleState by viewModel.vehicleState.collectAsState()
@@ -223,7 +303,7 @@ fun ControlScreen(viewModel: MainViewModel) {
             Button(
                 onClick = {
                     viewModel.controlSunroof("open")
-                    Toast.makeText(context, "선루프 열기 명령 전송", Toast.LENGTH_SHORT).show()
+                    // Toast.makeText(context, "선루프 열기 명령 전송", Toast.LENGTH_SHORT).show() // ViewModel에서 이벤트로 처리
                 },
                 enabled = !sunroofCommandInProgress && !acCommandInProgress
             ) {
@@ -233,7 +313,7 @@ fun ControlScreen(viewModel: MainViewModel) {
             Button(
                 onClick = {
                     viewModel.controlSunroof("close")
-                    Toast.makeText(context, "선루프 닫기 명령 전송", Toast.LENGTH_SHORT).show()
+                    // Toast.makeText(context, "선루프 닫기 명령 전송", Toast.LENGTH_SHORT).show()
                 },
                 enabled = !sunroofCommandInProgress && !acCommandInProgress
             ) {
@@ -253,7 +333,7 @@ fun ControlScreen(viewModel: MainViewModel) {
             Button(
                 onClick = {
                     viewModel.controlAC("on")
-                    Toast.makeText(context, "에어컨 켜기 명령 전송", Toast.LENGTH_SHORT).show()
+                    // Toast.makeText(context, "에어컨 켜기 명령 전송", Toast.LENGTH_SHORT).show()
                 },
                 enabled = !sunroofCommandInProgress && !acCommandInProgress
             ) {
@@ -263,7 +343,7 @@ fun ControlScreen(viewModel: MainViewModel) {
             Button(
                 onClick = {
                     viewModel.controlAC("off")
-                    Toast.makeText(context, "에어컨 끄기 명령 전송", Toast.LENGTH_SHORT).show()
+                    // Toast.makeText(context, "에어컨 끄기 명령 전송", Toast.LENGTH_SHORT).show()
                 },
                 enabled = !sunroofCommandInProgress && !acCommandInProgress
             ) {
@@ -279,7 +359,6 @@ fun ControlScreen(viewModel: MainViewModel) {
     }
 }
 
-// ... VehicleRegistrationScreen Composable ...
 @Composable
 fun VehicleRegistrationScreen(viewModel: MainViewModel) {
     val registeredVehicleInfo by viewModel.registeredVehicleInfo.collectAsState()
@@ -333,7 +412,6 @@ fun VehicleRegistrationScreen(viewModel: MainViewModel) {
     }
 }
 
-// ... MaintenanceScreen Composable ...
 @Composable
 fun MaintenanceScreen(viewModel: MainViewModel) {
     val maintenanceNotification by viewModel.maintenanceNotification.collectAsState()
@@ -375,7 +453,6 @@ fun MaintenanceScreen(viewModel: MainViewModel) {
     }
 }
 
-// ... ReservationForm Composable ...
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationForm(viewModel: MainViewModel) {
@@ -434,7 +511,7 @@ fun ReservationForm(viewModel: MainViewModel) {
             readOnly = true,
             trailingIcon = {
                 Icon(
-                    Icons.Filled.AccessTime, // AccessTime 아이콘 사용 (Schedule 대신)
+                    Icons.Filled.AccessTime,
                     contentDescription = "시간 선택",
                     modifier = Modifier.clickable { timePickerDialog.show() }
                 )
@@ -506,7 +583,6 @@ fun ReservationForm(viewModel: MainViewModel) {
     }
 }
 
-// ... Preview 함수들 ...
 @Preview(showBackground = true, name = "Monitoring Screen Preview")
 @Composable
 fun MonitoringScreenPreview() {
@@ -514,6 +590,15 @@ fun MonitoringScreenPreview() {
         MonitoringScreen(viewModel = MainViewModel())
     }
 }
+
+@Preview(showBackground = true, name = "Control Screen Preview")
+@Composable
+fun ControlScreenPreview() {
+    BluelinkTheme {
+        ControlScreen(viewModel = MainViewModel())
+    }
+}
+
 
 @Preview(showBackground = true, name = "Maintenance Screen - No Notification")
 @Composable
@@ -527,6 +612,7 @@ fun MaintenanceScreenPreviewNoNotification() {
 @Composable
 fun MaintenanceScreenPreviewWithNotification() {
     val previewViewModel = MainViewModel()
+    // previewViewModel.forceMaintenanceNotificationForPreview()
     BluelinkTheme {
         Column {
             MaintenanceScreen(viewModel = previewViewModel)
