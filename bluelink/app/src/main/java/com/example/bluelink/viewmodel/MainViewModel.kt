@@ -158,16 +158,22 @@ class MainViewModel : ViewModel() {
         )
         Log.d("MainViewModel", "VehicleState 업데이트 (MQTT): ${_vehicleState.value}")
     }
-    private fun handleEnvironmentDataMessage(message: String) { /* 이전과 동일 */
+
+    private fun handleEnvironmentDataMessage(message: String) {
         val jsonObj = JSONObject(message)
         _environmentData.value = EnvironmentData(
             indoorTemperature = jsonObj.optDouble("indoorTemp", _environmentData.value.indoorTemperature),
             indoorHumidity = jsonObj.optDouble("indoorHum", _environmentData.value.indoorHumidity),
             outdoorTemperature = jsonObj.optDouble("outdoorTemp", _environmentData.value.outdoorTemperature),
             outdoorHumidity = jsonObj.optDouble("outdoorHum", _environmentData.value.outdoorHumidity),
-            airQuality = jsonObj.optString("airQuality", _environmentData.value.airQuality),
+            airQuality = jsonObj.optString("airQuality", _environmentData.value.airQuality), // 실내 공기질
+            outdoorAirQuality = jsonObj.optString("outdoor_air_quality", _environmentData.value.outdoorAirQuality), // 외부 공기질 추가
             fineDust = jsonObj.optString("fineDust", _environmentData.value.fineDust)
+            // 만약 수치 필드도 있다면 여기서 파싱
+            // indoorAirQualityIndex = jsonObj.optInt("indoor_aqi", _environmentData.value.indoorAirQualityIndex ?: 0), // null일 경우 기본값 처리
         )
+        // _environmentDataLastUpdated.value = System.currentTimeMillis() // 마지막 업데이트 시간 표시 기능 건너뛰기로 주석 유지
+        Log.d("MainViewModel", "EnvironmentData 업데이트 (MQTT): ${_environmentData.value}")
     }
 
     private fun handleControlResultMessage(
