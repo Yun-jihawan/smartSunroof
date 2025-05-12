@@ -1,3 +1,3 @@
-# smartSunroof
+# 스마트 선루프 자동 제어 및 차양 시스템 스마트 선루프 자동 제어 및 차양 시스템
 
 ## testing hello
