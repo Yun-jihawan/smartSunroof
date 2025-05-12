@@ -291,7 +291,7 @@ void loop() {
   if (Serial2.available()) {
     uint8_t rx_byte = Serial2.read();
     
-    if (rx_index == 0 && rx_byte == 0xBB) { // 패킷 시작 식별자
+    if (rx_index == 0 && rx_byte == 0xAA) { // 패킷 시작 식별자
       rx_buffer[rx_index++] = rx_byte;
     }
     else if (rx_index > 0) { // 데이터 저장
