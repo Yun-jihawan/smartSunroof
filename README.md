@@ -1,4 +1,198 @@
 # 스마트 선루프 자동 제어 및 차양 시스템
 
-## ![image](https://github.com/user-attachments/assets/643fb99c-094f-4912-918c-709fd98d4b4d)
+**팀 이름** : 사파게티
+
+**구성원** : 송기종, 안상우 이예린, 윤지환 조용일, 김혁순
+
+**프로젝트 목표** : 
+
+- 선루프 자동 환기 및 차양 기능을 통해 운전 중 불필요한 조작을 줄이면서 운전자 및 탑승자에게 쾌적한 실내 환경을 제공한다.
+- 이진 적인 차양 조절이 아닌, 세밀한 빛 투과율 조정 기능을 제공한다.
+
+## **📌**주요 기능
+
+![image.png](attachment:39f734cb-f4d6-4212-a4a2-5a95c624c582:image.png)
+
+![image.png](attachment:abfaca3c-684a-45a6-bb86-cecc536ee61e:image.png)
+
+### 선루프 제어 기능
+
+- 온습도, 공기질, 미세먼지, 빗물 감지 센서를
+활용하여 차량 내/외부 환경 데이터를 수집
+- 환경 데이터를 기반으로 제어 로직을 거쳐
+스마트 선루프 개폐 제어
+
+### 선루프 투명도 제어 기능
+
+- 일사량을 감지하여 선루프 투명도 제어
+- SPD 필름 공급 문제로 모바일과 연동하여 모바일로 투명도 표시
+
+### 차량 내부 장치 제어 기능
+
+- 온습도에 따른 에어컨/히터 제어 기능
+- 내/외부 공기질을 파악해 환기모드를 내기/외기 모드 전환
+
+### 차량 모니터링 기능
+
+- 차량 내부 온습도를 디스플레이로 표시
+- 선루프 개폐 상태를 디스플레이로 표시
+- 투명도 상태를 디스플레이로 표시
+- 내부 장치 상태를 디스플레이로 표시
+
+### 기대 효과
+
+- 주행 중 조작 부담 감소로 운전 집중도 및 안전성 향상
+- 졸음 운전 위험 감소 및 쾌적한 실내 환경 유지
+- 적절한 채광 제공 및 에너지 절감
+- 사용 편의성과 개인 맞춤 환경 제공
+- 사용자 조작 용이성 향상
+
+---
+
+## 시연 영상
+
+---
+
+## 하드웨어 구성
+
+### **ECU**
+
+**STM32_Nucelo-L073RZ(1)**
+
+- 메인 ECU 및 CGW
+- 센서 데이터 수집
+- 스마트 선루프 및 투명도 제어 로직 생성
+- RPI4로 상태 값 송신
+- STM32_Nucelo-L073RZ(2) 로 제어명령 송신
+
+**STM32_Nucelo-L073RZ(2)**
+
+- Actuator ECU
+- CGW로부터 센서 값 요청 신호 받고 센서 값 송신
+- CGW로부터 제어 명령 수신 후 모터 구동
+- 투명도 값을 모바일로 전송
+
+**RPI4**
+
+- HMI
+- 터치 스크린으로 차량 내/외부 상태 표시
+- 선루프 및 투명도 상태 표시
+- 사용자 조작 입력 시 명령 값 CGW로 송신
+
+### Sensor
+
+**MQ-135**
+
+- 공기질 센서
+- Benzene, CO, CO2, Smoke 입력
+
+**GP2Y1023AU0F**
+
+- 미세먼지 센서
+- PM2.5 수준의 초 미세먼지 감지 가능
+
+**DHT11**
+
+- 온습도 입력 센서
+
+**WH148**
+
+- 가변저항
+- 속도 값 입력하기 위해 사용
+
+**CdS_Cell**
+
+- 조도 감지 센서
+- 조도 값을 통해 투명도 결정
+
+**MH-RD**
+
+- 빗물 감지 센서
+- 빗물이 감지되면 1 아니면 0으로 결정된다.
+
+### Motor
+
+**MB2832E-1268**
+
+- DC 엔코더 모터
+- 선루프 개폐를 담당한다.
+- 두개를 사용하여 닫힘, 팅틸, 개방을 한다.
+
+---
+
+## 소프트웨어 구성
+
+### Skill
+
+- **기술 스택 :** C언어, Python, Raspberrypi, UART 통신, Json, 웹 개발
+- **개발 툴** : STM32CubeIDE, STM32CubeMX, VSCode, Rasbian
+- **협업 툴** : Jira, Confluence, Git, GitBHub
+
+---
+
+## 시스템 설계서
+
+**시스템 정적 아키텍처**
+
+- 기능별 책임이 명확한 역할 기반 모듈 분리 구조로 시스템을 설계하고, 판단 로직은 STM1에 집중하여 중앙 집중 제어 방식을 적용
+- 실제 장치의 물리적 위치를 고려해 기능을 분류하고, 하드웨어 구성과 설치 편의성을 함께 반영한 구조로 설계
+
+![image.png](attachment:70ee1111-a912-47bb-ae22-81721a30c12c:image.png)
+
+### 스마트 제어 모드 판단
+
+![image.png](attachment:2d6fd4ca-bdb4-4aff-b7e8-cd5bbbbe6bfe:image.png)
+
+- 차량 내부의 상태를 파악하고 스마트/직접 제어 모드를 수신해서 스마트 제어 명령 모드를 판단 한다.
+- 우선순위는 왼쪽부터 오른쪽으로 점점 낮아지는 순으로 진행한다.
+
+### 전체 시스템 구성도
+
+![image.png](attachment:5c19587f-a07d-4574-836f-8df0559885a0:image.png)
+
+- 보드별로 UART 통신을 통해 10초 주기로 데이터를 주고 받으며 Actuator는 Web으로 BT를 통해 데이터를 송신한다.
+- 사용자는 디스플레이를 통해 차량 내/외부의 공조 값을 알 수 있고 선루프 및 투명도 상태도 파악이 가능하다.
+- 투명도는 모바일과 연동하여 화면 밝기 조절로 나타낸다.
+
+---
+
+## 아키텍처 및 다이어그램
+
+- 시스템 정적 아키텍처
+    
+    ![image.png](attachment:5a91df3d-3c63-4945-bfc3-a1a0b3e0a59d:image.png)
+    
+- 네트워크 인터페이스
+    
+    ![image.png](attachment:5cfda67d-fe06-45c4-aa8d-3aefedca7051:image.png)
+    
+    ![image.png](attachment:ff6462f0-d11b-416e-8835-4571267bab9e:image.png)
+    
+    ![image.png](attachment:86bab285-e82d-401f-a668-d24aafadc5e5:image.png)
+    
+- SW 정적 아키텍처
+    
+    ![image.png](attachment:72239ffa-6d71-490a-b751-618942e69cb9:image.png)
+    
+- SW 동적 아키텍처
+    
+    ![image.png](attachment:d6b49e3d-fc4b-45a0-a7bb-1dbf94daa06b:image.png)
+    
+- SUN Sequence Diagram
+    
+    ![image.png](attachment:ded64529-21da-4a8c-9780-38104276094b:image.png)
+    
+- RPI Sequence Diagram
+    
+    ![image.png](attachment:a258e10b-491b-41e2-98e6-36559d7aa522:image.png)
+    
+- CGW 흐름도
+    
+    ![image.png](attachment:42ed4a17-476e-4302-a139-974ddd63eb03:image.png)
+    
+- HMI 흐름도
+    
+    ![image.png](attachment:46e2cc31-ec81-4bfb-841b-e990b76c4f7a:image.png)
+
+
 
