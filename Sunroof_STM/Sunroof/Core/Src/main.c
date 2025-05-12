@@ -94,6 +94,9 @@ uint8_t receive_data = 0;
 // Sensor Read Flag
 uint8_t sensor_read = 0;
 
+static uint8_t prev_roof_state = 0xFF;  // 처음에는 일치하지 않도록 임의의 값
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -181,6 +184,8 @@ int main(void)
   // DFPlayer Mini 초기화
   DFPlayerMini_InitPlayer(&hlpuart1);
 
+//  roof_state = 1;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -222,7 +227,30 @@ int main(void)
 		  }
 	  }
 
+	  if (roof_state != prev_roof_state) {
+	      prev_roof_state = roof_state;  // 상태 변경 기록
+
+	      switch (roof_state) {
+	      	  case OPEN:
+	      		  // 선루프 자동 열림 mp3 재생
+	      		  DFPlayerMini_PlayFile(1);
+	              break;
+	          case TILTING:
+				  // 선루프 자동 틸팅 mp3 재생
+				  DFPlayerMini_PlayFile(2);
+	        	  break;
+	          case CLOSE:
+	        	  // 선루프 자동 닫힘 mp3 재생
+				  DFPlayerMini_PlayFile(3);
+	              break;
+			  case STOP:
+	          default:
+	              break;
+	      }
+	  }
+
 	  Sunroof_Set(roof_state);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
