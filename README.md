@@ -223,6 +223,27 @@
     
 </details> 
 
+<details>
+  <summary>CGW 회로도</summary>
+    
+   ![image](https://github.com/user-attachments/assets/c23ffa36-95cf-4a8a-94f2-e9ef7b9843aa)
+
+</details> 
+
+<details>
+  <summary>SUN 회로도</summary>
+    
+![image](https://github.com/user-attachments/assets/f9f832e1-f762-4377-8db6-d47af66b74ab)
+
+</details> 
+
+<details>
+  <summary>RPI4 회로도</summary>
+    
+![image](https://github.com/user-attachments/assets/f69f8587-e785-425c-a2e3-44585be60850)
+
+</details> 
+
 ## 감사합니다.
 
 
