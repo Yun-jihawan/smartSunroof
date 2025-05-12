@@ -163,50 +163,67 @@
 
 ## 아키텍처 및 다이어그램
 
-> 시스템 정적 아키텍처
+<details>
+  <summary>시스템 정적 아키텍처</summary>
     
    ![image](https://github.com/user-attachments/assets/28065764-30a8-4a1f-bf0c-fd4ee019b784)
+   
+</details>
     
-- 네트워크 인터페이스
+<details>
+  <summary>네트워크 인터페이스</summary>
     
    ![image](https://github.com/user-attachments/assets/6d3f856b-910a-4188-b84a-18741921c0a3)
 
    ![image](https://github.com/user-attachments/assets/29e0b738-74ec-4fb5-8d81-13c21df3057c)
 
    ![image](https://github.com/user-attachments/assets/3797bb65-04ec-48ba-a8f2-c4bdbca78536)
-
+   
+</details>   
     
-- SW 정적 아키텍처
+<details>
+  <summary>SW 정적 아키텍처</summary>
     
     ![image](https://github.com/user-attachments/assets/c7807b2d-d8cd-495a-9554-723741ea594e)
-
     
-- SW 동적 아키텍처
+</details>
+    
+<details>
+  <summary>SW 동적 아키텍처</summary>
     
     ![image](https://github.com/user-attachments/assets/7cb2c37b-0f42-4cc9-b0e0-3b06bdf335eb)
-
     
-- SUN Sequence Diagram
+</details>    
+
+<details>
+  <summary>SUN Sequence Diagram</summary>
     
     ![image](https://github.com/user-attachments/assets/86ba25bb-22fa-4654-bd20-b5418d264e1e)
-
     
-- RPI Sequence Diagram
+</details>  
+
+<details>
+  <summary>RPI Sequence Diagram</summary>
     
     ![image](https://github.com/user-attachments/assets/6bbb0111-b138-43ea-9d7d-5c30b603fd44)
-
     
-- CGW 흐름도
+</details>  
+
+<details>
+  <summary>CGW 흐름도</summary>
     
     ![image](https://github.com/user-attachments/assets/400eb808-7d4b-4af9-ad7d-7c3735ad37da)
-
     
-- HMI 흐름도
+</details> 
+
+<details>
+  <summary>HMI 흐름도</summary>
     
    ![image](https://github.com/user-attachments/assets/44878dcb-896f-48dd-ac91-c323b27ebb4f)
+    
+</details> 
 
-
-##감사합니다.
+## 감사합니다.
 
 
 
