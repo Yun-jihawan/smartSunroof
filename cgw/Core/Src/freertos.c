@@ -298,8 +298,6 @@ void StartDataHandlerTask(void *argument)
     {
       osDelay(100);
       send_sensor_data(data->dht, air_dust_level);
-      osDelay(100);
-      Send_Sunroof_CGW_to_ESP();
 
       if (state->mode == MODE_SMART)
       {
@@ -320,6 +318,8 @@ void StartDataHandlerTask(void *argument)
 
     osDelay(100);
     Send_Sunroof_Command_CGW_to_SUN(state);
+    osDelay(100);
+    Send_Sunroof_CGW_to_ESP();
     osDelay(100);
     xEventGroupClearBits(xSensorEventGroup, ANY_DATA_READY_EVENT);
   }
