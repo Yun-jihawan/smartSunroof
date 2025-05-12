@@ -91,6 +91,8 @@ void Error_Handler(void);
 #define PM2_5_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
+#define WH148_Pin GPIO_PIN_6
+#define WH148_GPIO_Port GPIOA
 #define DHT11_INTERNAL_Pin GPIO_PIN_0
 #define DHT11_INTERNAL_GPIO_Port GPIOB
 #define TMS_Pin GPIO_PIN_13

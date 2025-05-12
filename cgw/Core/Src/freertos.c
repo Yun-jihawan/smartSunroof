@@ -31,6 +31,7 @@
 #include "transparency.h"
 #include "uart_cgw_rpi.h"
 #include "usart.h"
+#include "wh148.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -226,6 +227,7 @@ void StartSensorReadTask(void *argument)
     DHT_Read(dht_sensors, data->dht);
     AQ_Read(aq_sensors, data->aq);
     PM_Read(&dust_sensor, &data->pm);
+    POT_Read(&data->velocity);
     __enable_irq();
 
     xEventGroupSetBits(xSensorEventGroup, CGW_DATA_READY_EVENT);

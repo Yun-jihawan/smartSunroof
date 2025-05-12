@@ -30,10 +30,16 @@ static float MQ135_ReadAverageADC(mq135_sensor_t *hmq)
     float                  sum     = 0;
     ADC_ChannelConfTypeDef sConfig = {0};
 
+    /* Deselect all channels */
+    sConfig.Channel = ADC_CHANNEL_MASK;
+    sConfig.Rank    = ADC_RANK_NONE;
+    HAL_ADC_ConfigChannel(hmq->hadc, &sConfig);
+
+    /* Configure adc channel */
     sConfig.Channel = hmq->adc_channel;
+    sConfig.Rank    = ADC_RANK_CHANNEL_NUMBER;
     // sConfig.Rank = ADC_REGULAR_RANK_1;
     // sConfig.SamplingTime = ADC_SAMPLETIME_39CYCLES_5;
-
     HAL_ADC_ConfigChannel(hmq->hadc, &sConfig);
 
     for (int i = 0; i < hmq->average_count; i++)
