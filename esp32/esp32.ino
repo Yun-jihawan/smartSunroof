@@ -74,8 +74,8 @@ const char* getRoofStatusString(uint8_t roofState) {
 const char* getAirConditionerStatusString(uint8_t acState) {
   switch (acState) {
     case 0: return "OFF";  // AIR_CONDITIONER_OFF
-    case 1: return "I/A";  // AIR_CONDITIONER_IN
-    case 2: return "O/A";  // AIR_CONDITIONER_OUT
+    case 1: return "O/A";  // AIR_CONDITIONER_OUT
+    case 2: return "I/A";  // AIR_CONDITIONER_IN
     case 3: return "MAX"; // AIR_CONDITIONER_MAX
     default: return "unknown";
   }
