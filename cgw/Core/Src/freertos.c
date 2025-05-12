@@ -57,7 +57,6 @@
 /* USER CODE BEGIN Variables */
 // CGW-SUN
 static uint8_t rx_buf[4];
-static uint8_t tx_data[2];
 
 // CGW-RPI
 static uint8_t rx_data[5];
@@ -143,12 +142,37 @@ static void Receive_Sensor_Data_SUN_to_CGW(uint8_t *rx_buffer)
 
 static void Send_Sunroof_Command_CGW_to_SUN(system_state_t *state)
 {
-  tx_data[0] = state->roof + '0';
-  tx_data[1] = state->transparency / 5;
-  HAL_UART_Transmit(&huart1, tx_data, sizeof(tx_data), 100);
+  static uint8_t tx_data_uart1[2];
+
+  tx_data_uart1[0] = state->roof + '0';
+  tx_data_uart1[1] = state->transparency / 5;
+  HAL_UART_Transmit(&huart1, tx_data_uart1, sizeof(tx_data_uart1), HAL_MAX_DELAY);
 #if (DEBUG_LEVEL > 0)
   printf("Send command %s \r\n", tx_data);
 #endif
+}
+
+static void Send_Sunroof_CGW_to_ESP()
+{
+  static uint8_t tx_data_lpuart1[7];
+
+  dht11_data_t *dht11 = sunroof.data.dht;
+  system_state_t *state = &sunroof.state;
+  air_dust_level_t *air_dust_state = &sunroof.air_dust_level;
+
+  tx_data_lpuart1[0] = 0xBB; // 패킷 시작 식별자
+  tx_data_lpuart1[1] = state->mode
+                      | (state->roof << 1)
+                      | (state->airconditioner << 3);
+  tx_data_lpuart1[2] = dht11[IN].temp;
+  tx_data_lpuart1[3] = dht11[IN].rh;
+  tx_data_lpuart1[4] = dht11[OUT].temp;
+  tx_data_lpuart1[5] = dht11[OUT].rh;
+  tx_data_lpuart1[6] = air_dust_state->internal_air_quality_state
+                      | (air_dust_state->external_air_quality_state << 2)
+                      | (air_dust_state->dust_state << 4);
+
+  HAL_UART_Transmit(&hlpuart1, tx_data_lpuart1, sizeof(tx_data_lpuart1), HAL_MAX_DELAY);
 }
 /* USER CODE END 4 */
 
@@ -233,7 +257,7 @@ void StartSensorReadTask(void *argument)
     xEventGroupSetBits(xSensorEventGroup, CGW_DATA_READY_EVENT);
 
     // SUN에 나한테 데이터 보내라고 요청
-    HAL_UART_Transmit(&huart1, tx_request, sizeof(tx_request), 100);
+    HAL_UART_Transmit(&huart1, tx_request, sizeof(tx_request), HAL_MAX_DELAY);
 
     osDelay(10000);
   }
@@ -274,6 +298,8 @@ void StartDataHandlerTask(void *argument)
     {
       osDelay(100);
       send_sensor_data(data->dht, air_dust_level);
+      osDelay(100);
+      Send_Sunroof_CGW_to_ESP();
 
       if (state->mode == MODE_SMART)
       {
