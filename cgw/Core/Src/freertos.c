@@ -160,7 +160,7 @@ static void Send_Sunroof_CGW_to_ESP()
   system_state_t *state = &sunroof.state;
   air_dust_level_t *air_dust_state = &sunroof.air_dust_level;
 
-  tx_data_lpuart1[0] = 0xBB; // 패킷 시작 식별자
+  tx_data_lpuart1[0] = 0xAA; // 패킷 시작 식별자
   tx_data_lpuart1[1] = state->mode
                       | (state->roof << 1)
                       | (state->airconditioner << 3);
