@@ -53,8 +53,6 @@
 
 ## 🎥 시연 영상
 
-![video](./img/galskdjfg.png)
-
 https://youtu.be/Iv8Jby0_KCU
 
 ---
