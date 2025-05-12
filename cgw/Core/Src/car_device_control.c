@@ -138,7 +138,7 @@ uint8_t smart_device_command(dht11_data_t *dht, uint8_t temp_user)
             {
                 operation_conditioner(season, 1, temp_user);
             }
-            aircond_state = 1;
+            aircond_state = AIR_CONDITIONER_IN;
         }
     }
 
@@ -149,7 +149,7 @@ uint8_t smart_device_command(dht11_data_t *dht, uint8_t temp_user)
         {
             operation_conditioner(season, 1, temp_user);
         }
-        aircond_state = 1;
+        aircond_state = AIR_CONDITIONER_IN;
     }
     return aircond_state | in_out_mode;
 }

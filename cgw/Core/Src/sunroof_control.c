@@ -49,8 +49,7 @@ SensingThreshold_t threshold_input = {.temp_threshold      = 24.0f,
                                       .air_soso_threshold  = 1.0f,
                                       .air_good_threshold  = 0.8f,
                                       .aqi_in_threshold    = 0.8f};
-uint8_t in_out_mode = 0; // 환기 내기/외기모드 구분, 0 = 내기, 1 = 외기,
-                         // 기본값은 내기 순환모드로 하면 됨
+uint8_t in_out_mode = 0; // 환기 내기/외기모드 구분
 float current_in_di  = 0.0f;
 float current_out_di = 0.0f;
 
@@ -187,7 +186,7 @@ uint8_t Smart_Sunroof_Control(sunroof_t *sunroof)
     // 2-2. 내부 공기질이 외부보다 나쁘고 그 차이가 0.4 이상이면 틸팅
     if (aqi_in - aqi_out >= 0.4f)
     {
-        in_out_mode = 2; // 외기모드
+        in_out_mode = AIR_CONDITIONER_OUT; // 외기모드
         need_vent   = 1;
     }
     // 2-3. 내부 공기질과 외부 공기질이 차이가 적으면 닫기

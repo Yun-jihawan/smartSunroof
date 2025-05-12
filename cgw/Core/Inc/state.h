@@ -22,8 +22,8 @@ typedef enum
 typedef enum
 {
     AIR_CONDITIONER_OFF = 0x00U,
-    AIR_CONDITIONER_IN  = 0x01U,
-    AIR_CONDITIONER_OUT = 0x02U,
+    AIR_CONDITIONER_OUT  = 0x01U,
+    AIR_CONDITIONER_IN = 0x02U,
     AIR_CONDITIONER_MAX = 0x03U
 } aircond_state_t;
 
