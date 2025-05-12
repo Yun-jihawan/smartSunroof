@@ -11,9 +11,11 @@
 
 ## **📌**주요 기능
 
-![image.png](attachment:39f734cb-f4d6-4212-a4a2-5a95c624c582:image.png)
+![image](https://github.com/user-attachments/assets/5bb1ea40-95f7-4435-8a83-033dbd3718e1)
 
-![image.png](attachment:abfaca3c-684a-45a6-bb86-cecc536ee61e:image.png)
+
+![image](https://github.com/user-attachments/assets/1b0d5334-b950-48e4-b0b6-5b342d2792ab)
+
 
 ### 선루프 제어 기능
 
@@ -137,18 +139,21 @@
 - 기능별 책임이 명확한 역할 기반 모듈 분리 구조로 시스템을 설계하고, 판단 로직은 STM1에 집중하여 중앙 집중 제어 방식을 적용
 - 실제 장치의 물리적 위치를 고려해 기능을 분류하고, 하드웨어 구성과 설치 편의성을 함께 반영한 구조로 설계
 
-![image.png](attachment:70ee1111-a912-47bb-ae22-81721a30c12c:image.png)
+![image](https://github.com/user-attachments/assets/28065764-30a8-4a1f-bf0c-fd4ee019b784)
+
 
 ### 스마트 제어 모드 판단
 
-![image.png](attachment:2d6fd4ca-bdb4-4aff-b7e8-cd5bbbbe6bfe:image.png)
+![image](https://github.com/user-attachments/assets/77cda669-11f7-4983-ad5c-4c97665cd776)
+
+
 
 - 차량 내부의 상태를 파악하고 스마트/직접 제어 모드를 수신해서 스마트 제어 명령 모드를 판단 한다.
 - 우선순위는 왼쪽부터 오른쪽으로 점점 낮아지는 순으로 진행한다.
 
 ### 전체 시스템 구성도
 
-![image.png](attachment:5c19587f-a07d-4574-836f-8df0559885a0:image.png)
+![image](https://github.com/user-attachments/assets/bc005494-8075-47c4-ba40-dba3c717b915)
 
 - 보드별로 UART 통신을 통해 10초 주기로 데이터를 주고 받으며 Actuator는 Web으로 BT를 통해 데이터를 송신한다.
 - 사용자는 디스플레이를 통해 차량 내/외부의 공조 값을 알 수 있고 선루프 및 투명도 상태도 파악이 가능하다.
@@ -160,7 +165,7 @@
 
 - 시스템 정적 아키텍처
     
-    ![image.png](attachment:5a91df3d-3c63-4945-bfc3-a1a0b3e0a59d:image.png)
+   ![image](https://github.com/user-attachments/assets/28065764-30a8-4a1f-bf0c-fd4ee019b784)
     
 - 네트워크 인터페이스
     
