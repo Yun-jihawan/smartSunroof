@@ -163,7 +163,7 @@
 
 ## 아키텍처 및 다이어그램
 
-- 시스템 정적 아키텍처
+> 시스템 정적 아키텍처
     
    ![image](https://github.com/user-attachments/assets/28065764-30a8-4a1f-bf0c-fd4ee019b784)
     
