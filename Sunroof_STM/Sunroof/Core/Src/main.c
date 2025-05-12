@@ -20,8 +20,8 @@
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
-#include "tim.h"
 #include "usart.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -158,6 +158,7 @@ int main(void)
   MX_TIM3_Init();
   MX_USART5_UART_Init();
   MX_USART1_UART_Init();
+  MX_LPUART1_UART_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -176,6 +177,10 @@ int main(void)
   sensor_read = 0;
 
   printf("#BOOT\r\n");
+
+  // DFPlayer Mini 초기화
+  DFPlayerMini_InitPlayer(&hlpuart1);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -263,9 +268,11 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2
+                              |RCC_PERIPHCLK_LPUART1;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
+  PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();

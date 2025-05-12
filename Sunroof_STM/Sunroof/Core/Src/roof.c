@@ -44,6 +44,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 void Sunroof_Set(uint8_t mode) {
 	switch(mode) {
 	case OPEN:
+		// 선루프 자동 열림 mp3 재생
+		DFPlayerMini_PlayFile(1);
+		HAL_Delay(3000);
 		if(tilting_encoder >= 0){
 			// STOP Roof Motor
 			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
@@ -71,6 +74,9 @@ void Sunroof_Set(uint8_t mode) {
 		}
 		break;
 	case TILTING:
+		// 선루프 자동 열림 mp3 재생
+		DFPlayerMini_PlayFile(3);
+		HAL_Delay(3000);
 		if(roof_encoder >= 0) {
 			// STOP Tilting Motor
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
@@ -98,6 +104,9 @@ void Sunroof_Set(uint8_t mode) {
 		}
 		break;
 	case CLOSE:
+		// 선루프 자동 닫힘 mp3 재생
+		DFPlayerMini_PlayFile(2);
+		HAL_Delay(3000);
 		if(tilting_encoder >= 0)
 		{
 			// STOP Roof Motor

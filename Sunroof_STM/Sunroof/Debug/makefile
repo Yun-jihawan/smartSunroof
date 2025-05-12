@@ -60,8 +60,8 @@ all: main-build
 main-build: Sunroof.elf secondary-outputs
 
 # Tool invocations
-Sunroof.elf Sunroof.map: $(OBJS) $(USER_OBJS) C:\Users\USER\Project_1\smartSunroof\Sunroof_STM\Sunroof\STM32L073RZTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Sunroof.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0plus -T"C:\Users\USER\Project_1\smartSunroof\Sunroof_STM\Sunroof\STM32L073RZTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Sunroof.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Sunroof.elf Sunroof.map: $(OBJS) $(USER_OBJS) D:\SUN\smartSunroof\Sunroof_STM\Sunroof\STM32L073RZTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Sunroof.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0plus -T"D:\SUN\smartSunroof\Sunroof_STM\Sunroof\STM32L073RZTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Sunroof.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
