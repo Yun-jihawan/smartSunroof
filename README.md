@@ -169,35 +169,44 @@
     
 - 네트워크 인터페이스
     
-    ![image.png](attachment:5cfda67d-fe06-45c4-aa8d-3aefedca7051:image.png)
-    
-    ![image.png](attachment:ff6462f0-d11b-416e-8835-4571267bab9e:image.png)
-    
-    ![image.png](attachment:86bab285-e82d-401f-a668-d24aafadc5e5:image.png)
+   ![image](https://github.com/user-attachments/assets/6d3f856b-910a-4188-b84a-18741921c0a3)
+
+   ![image](https://github.com/user-attachments/assets/29e0b738-74ec-4fb5-8d81-13c21df3057c)
+
+   ![image](https://github.com/user-attachments/assets/3797bb65-04ec-48ba-a8f2-c4bdbca78536)
+
     
 - SW 정적 아키텍처
     
-    ![image.png](attachment:72239ffa-6d71-490a-b751-618942e69cb9:image.png)
+    ![image](https://github.com/user-attachments/assets/c7807b2d-d8cd-495a-9554-723741ea594e)
+
     
 - SW 동적 아키텍처
     
-    ![image.png](attachment:d6b49e3d-fc4b-45a0-a7bb-1dbf94daa06b:image.png)
+    ![image](https://github.com/user-attachments/assets/7cb2c37b-0f42-4cc9-b0e0-3b06bdf335eb)
+
     
 - SUN Sequence Diagram
     
-    ![image.png](attachment:ded64529-21da-4a8c-9780-38104276094b:image.png)
+    ![image](https://github.com/user-attachments/assets/86ba25bb-22fa-4654-bd20-b5418d264e1e)
+
     
 - RPI Sequence Diagram
     
-    ![image.png](attachment:a258e10b-491b-41e2-98e6-36559d7aa522:image.png)
+    ![image](https://github.com/user-attachments/assets/6bbb0111-b138-43ea-9d7d-5c30b603fd44)
+
     
 - CGW 흐름도
     
-    ![image.png](attachment:42ed4a17-476e-4302-a139-974ddd63eb03:image.png)
+    ![image](https://github.com/user-attachments/assets/400eb808-7d4b-4af9-ad7d-7c3735ad37da)
+
     
 - HMI 흐름도
     
-    ![image.png](attachment:46e2cc31-ec81-4bfb-841b-e990b76c4f7a:image.png)
+   ![image](https://github.com/user-attachments/assets/44878dcb-896f-48dd-ac91-c323b27ebb4f)
+
+
+##감사합니다.
 
 
 
