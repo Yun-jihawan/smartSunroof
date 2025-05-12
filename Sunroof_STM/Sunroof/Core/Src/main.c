@@ -20,8 +20,8 @@
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
-#include "tim.h"
 #include "usart.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -94,6 +94,9 @@ uint8_t receive_data = 0;
 // Sensor Read Flag
 uint8_t sensor_read = 0;
 
+static uint8_t prev_roof_state = 0xFF;  // 처음에는 일치하지 않도록 임의의 값
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -158,6 +161,7 @@ int main(void)
   MX_TIM3_Init();
   MX_USART5_UART_Init();
   MX_USART1_UART_Init();
+  MX_LPUART1_UART_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -176,6 +180,12 @@ int main(void)
   sensor_read = 0;
 
   printf("#BOOT\r\n");
+
+  // DFPlayer Mini 초기화
+  DFPlayerMini_InitPlayer(&hlpuart1);
+
+//  roof_state = 1;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -217,7 +227,30 @@ int main(void)
 		  }
 	  }
 
+	  if (roof_state != prev_roof_state) {
+	      prev_roof_state = roof_state;  // 상태 변경 기록
+
+	      switch (roof_state) {
+	      	  case OPEN:
+	      		  // 선루프 자동 열림 mp3 재생
+	      		  DFPlayerMini_PlayFile(1);
+	              break;
+	          case TILTING:
+				  // 선루프 자동 틸팅 mp3 재생
+				  DFPlayerMini_PlayFile(2);
+	        	  break;
+	          case CLOSE:
+	        	  // 선루프 자동 닫힘 mp3 재생
+				  DFPlayerMini_PlayFile(3);
+	              break;
+			  case STOP:
+	          default:
+	              break;
+	      }
+	  }
+
 	  Sunroof_Set(roof_state);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -263,9 +296,11 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2
+                              |RCC_PERIPHCLK_LPUART1;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
+  PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
