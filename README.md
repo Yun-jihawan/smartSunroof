@@ -163,6 +163,64 @@ https://youtu.be/Iv8Jby0_KCU
 
 ---
 
+## 데이터 인터페이스
+
+### SUN -> CGW 
+* Baud rate : 9600bps
+  
+![image](https://github.com/user-attachments/assets/0b0c37b1-e2ff-4a4c-981c-0c6310d0f24c)
+
+### CGW->SUN
+*  Baud rate : 9600bps
+*  Period : 10s
+*  Request Frame : 0xFFFF
+  
+ ![image](https://github.com/user-attachments/assets/01f460e3-692d-446a-8ab5-144465338c8d)
+
+ ### SUN -> SPD
+ * Baud rate : 9600bps
+
+![image](https://github.com/user-attachments/assets/853c2394-bf35-4f13-9e88-04d019b07917)
+
+### CGW -> HMI
+* Baud rate : 9600bps
+* Period : 10s
+
+![image](https://github.com/user-attachments/assets/5f1107ec-5f33-4671-b19c-5b4db3d4bae4)
+
+* Baud rate : 9600bps
+* Period : 10s
+
+![image](https://github.com/user-attachments/assets/b3fde0cb-df99-4242-9601-522045b2c7d5)
+
+### HMI -> CGW
+* Baud rate : 9600bps
+
+![image](https://github.com/user-attachments/assets/26e1804f-bbcd-44aa-a38d-8094ab7c4c05)
+
+
+![image](https://github.com/user-attachments/assets/5e685746-a913-4096-ac62-78b8ecb1c944)
+
+
+---
+
+## Pin Map
+
+### CGW (NUCLEO-L073RZ)
+
+![image](https://github.com/user-attachments/assets/7ec00fb6-ce4e-44ff-b5d8-dbbb398d66c0)
+
+
+### SUN (NUCLEO-L073RZ)
+
+![image](https://github.com/user-attachments/assets/227337f3-a988-4cbf-866d-f4c882111c43)
+
+### SPD (ESP32-WROOM-32)
+
+![image](https://github.com/user-attachments/assets/3206fd85-4c59-484e-a075-cc46ad472a86)
+
+
+
 ## 🪜 아키텍처 및 다이어그램
 
 <details>
