@@ -215,7 +215,7 @@ https://youtu.be/Iv8Jby0_KCU
 
 ![image](https://github.com/user-attachments/assets/227337f3-a988-4cbf-866d-f4c882111c43)
 
-## HMI(RPI4)
+### HMI(RPI4)
 
 ![image](https://github.com/user-attachments/assets/2c621510-c7cf-4c3b-9847-c8360b33365f)
 
