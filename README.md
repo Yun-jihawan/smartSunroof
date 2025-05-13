@@ -163,7 +163,7 @@ https://youtu.be/Iv8Jby0_KCU
 
 ---
 
-## 데이터 인터페이스
+## 💾 데이터 인터페이스
 
 ### SUN -> CGW 
 * Baud rate : 9600bps
@@ -204,7 +204,7 @@ https://youtu.be/Iv8Jby0_KCU
 
 ---
 
-## Pin Map
+## 📄 Pin Map
 
 ### CGW (NUCLEO-L073RZ)
 
