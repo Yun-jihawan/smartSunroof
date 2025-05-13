@@ -186,49 +186,49 @@ https://youtu.be/Iv8Jby0_KCU
 <details>
   <summary>SW 정적 아키텍처</summary>
     
-    ![image](https://github.com/user-attachments/assets/c7807b2d-d8cd-495a-9554-723741ea594e)
+  ![image](https://github.com/user-attachments/assets/c7807b2d-d8cd-495a-9554-723741ea594e)
     
 </details>
     
 <details>
   <summary>SW 동적 아키텍처</summary>
     
-    ![image](https://github.com/user-attachments/assets/7cb2c37b-0f42-4cc9-b0e0-3b06bdf335eb)
+  ![image](https://github.com/user-attachments/assets/7cb2c37b-0f42-4cc9-b0e0-3b06bdf335eb)
     
 </details>    
 
 <details>
   <summary>SUN Sequence Diagram</summary>
     
-    ![image](https://github.com/user-attachments/assets/86ba25bb-22fa-4654-bd20-b5418d264e1e)
+  ![image](https://github.com/user-attachments/assets/86ba25bb-22fa-4654-bd20-b5418d264e1e)
     
 </details>  
 
 <details>
   <summary>RPI Sequence Diagram</summary>
     
-    ![image](https://github.com/user-attachments/assets/6bbb0111-b138-43ea-9d7d-5c30b603fd44)
+  ![image](https://github.com/user-attachments/assets/6bbb0111-b138-43ea-9d7d-5c30b603fd44)
     
 </details>  
 
 <details>
   <summary>CGW 흐름도</summary>
     
-    ![image](https://github.com/user-attachments/assets/400eb808-7d4b-4af9-ad7d-7c3735ad37da)
+  ![image](https://github.com/user-attachments/assets/400eb808-7d4b-4af9-ad7d-7c3735ad37da)
     
 </details> 
 
 <details>
   <summary>HMI 흐름도</summary>
     
-   ![image](https://github.com/user-attachments/assets/44878dcb-896f-48dd-ac91-c323b27ebb4f)
+  ![image](https://github.com/user-attachments/assets/44878dcb-896f-48dd-ac91-c323b27ebb4f)
     
 </details> 
 
 <details>
   <summary>CGW 회로도</summary>
     
-   ![image](https://github.com/user-attachments/assets/c23ffa36-95cf-4a8a-94f2-e9ef7b9843aa)
+  ![image](https://github.com/user-attachments/assets/c23ffa36-95cf-4a8a-94f2-e9ef7b9843aa)
 
 </details> 
 
