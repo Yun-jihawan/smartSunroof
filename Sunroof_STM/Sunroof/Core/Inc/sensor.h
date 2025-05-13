@@ -16,7 +16,7 @@
 #include "gpio.h"
 
 
-#define RAIN_TH 3200
+#define RAIN_TH 2000
 
 extern volatile uint16_t in_illum;
 extern volatile uint16_t out_illum;

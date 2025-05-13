@@ -54,5 +54,5 @@ void read_illum(void){
 void read_rain(void){
 	rain_sense = HW_AdcReadChannel(ADC_CHANNEL_15);
 
-	rain_state = (rain_sense > RAIN_TH);
+	rain_state = (rain_sense < RAIN_TH);
 }

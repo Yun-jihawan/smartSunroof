@@ -15,7 +15,8 @@
 #include "usart.h"
 #include "gpio.h"
 
-#define MOVE_SPEED 70
+#define SLIDE_SPEED 25
+#define TILT_SPEED 27
 
 #define CLOSE 0
 #define TILTING 1
@@ -25,10 +26,9 @@
 #define CW 1
 #define ACW 0
 
-#define ROOF_OPEN_MAX 6000
-#define ROOF_TILTING_MAX 3000
+#define ROOF_OPEN_MAX 50
+#define ROOF_TILTING_MAX 5
 #define ROOF_CLOSE 0
-#define Margin 300
 
 
 extern volatile int32_t roof_encoder;

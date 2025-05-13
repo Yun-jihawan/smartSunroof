@@ -172,8 +172,8 @@ int main(void)
   HAL_UART_Receive_DMA(&huart1, CGW_rx_buf, sizeof(CGW_rx_buf));
 
   // Initialize
-  roof_encoder = 0;
-  tilting_encoder = 0;
+  roof_encoder = -1;
+  tilting_encoder = -1;
   roof_state = STOP;
   film_opacity = 0;
   CGW_rx_ready = 0;
@@ -200,6 +200,7 @@ int main(void)
 		  read_illum();
 		  read_rain();
 		  Send_Data_CGW();
+
 
 		  printf("#SEND\r\n in : %d, out : %d, rain : %d, roof : %d, opacity : %d\r\n", \
 				  (int)in_illum, (int)out_illum, (int)rain_state, (int)roof_state, (int)film_opacity);

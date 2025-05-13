@@ -10,6 +10,8 @@
 #define TWO_MOTOR 1
 #define ONE_MOTOR 0
 
+int cnt = 0;
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	uint8_t ROOF_A_state = 0;
 	uint8_t ROOF_B_state = 0;
@@ -49,16 +51,21 @@ void Sunroof_Set(uint8_t mode) {
 			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 			HAL_GPIO_WritePin(ROOF_BRAKE_GPIO_Port, ROOF_BRAKE_Pin, 1);
 			// ACW Tilting Motor
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, MOVE_SPEED);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, TILT_SPEED);
 			HAL_GPIO_WritePin(TILTING_BRAKE_GPIO_Port, TILTING_BRAKE_Pin, 0);
 			HAL_GPIO_WritePin(TILTING_DIR_GPIO_Port, TILTING_DIR_Pin, ACW);
+			cnt = 0;
+		}
+		else if(cnt < 100000)
+		{
+			cnt++;
 		}
 		else if(roof_encoder <= ROOF_OPEN_MAX) {
 			// STOP Tilting Motor
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
 			HAL_GPIO_WritePin(TILTING_BRAKE_GPIO_Port, TILTING_BRAKE_Pin, 1);
 			// CW Roof Motor
-			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, MOVE_SPEED);
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, SLIDE_SPEED);
 			HAL_GPIO_WritePin(ROOF_BRAKE_GPIO_Port, ROOF_BRAKE_Pin, 0);
 			HAL_GPIO_WritePin(ROOF_DIR_GPIO_Port, ROOF_DIR_Pin, CW);
 		}
@@ -76,7 +83,7 @@ void Sunroof_Set(uint8_t mode) {
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
 			HAL_GPIO_WritePin(TILTING_BRAKE_GPIO_Port, TILTING_BRAKE_Pin, 1);
 			// ACW Roof Motor
-			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, MOVE_SPEED);
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, SLIDE_SPEED);
 			HAL_GPIO_WritePin(ROOF_BRAKE_GPIO_Port, ROOF_BRAKE_Pin, 0);
 			HAL_GPIO_WritePin(ROOF_DIR_GPIO_Port, ROOF_DIR_Pin, ACW);
 		}
@@ -85,7 +92,7 @@ void Sunroof_Set(uint8_t mode) {
 			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 			HAL_GPIO_WritePin(ROOF_BRAKE_GPIO_Port, ROOF_BRAKE_Pin, 1);
 			// CW Tilting Motor
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, MOVE_SPEED);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, TILT_SPEED);
 			HAL_GPIO_WritePin(TILTING_BRAKE_GPIO_Port, TILTING_BRAKE_Pin, 0);
 			HAL_GPIO_WritePin(TILTING_DIR_GPIO_Port, TILTING_DIR_Pin, CW);
 		}
@@ -104,7 +111,7 @@ void Sunroof_Set(uint8_t mode) {
 			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 			HAL_GPIO_WritePin(ROOF_BRAKE_GPIO_Port, ROOF_BRAKE_Pin, 1);
 			// ACW Tilting Motor
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, MOVE_SPEED);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, TILT_SPEED);
 			HAL_GPIO_WritePin(TILTING_BRAKE_GPIO_Port, TILTING_BRAKE_Pin, 0);
 			HAL_GPIO_WritePin(TILTING_DIR_GPIO_Port, TILTING_DIR_Pin, ACW);
 		}
@@ -113,7 +120,7 @@ void Sunroof_Set(uint8_t mode) {
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
 			HAL_GPIO_WritePin(TILTING_BRAKE_GPIO_Port, TILTING_BRAKE_Pin, 1);
 			// ACW Roof Motor
-			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, MOVE_SPEED);
+			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, SLIDE_SPEED);
 			HAL_GPIO_WritePin(ROOF_BRAKE_GPIO_Port, ROOF_BRAKE_Pin, 0);
 			HAL_GPIO_WritePin(ROOF_DIR_GPIO_Port, ROOF_DIR_Pin, ACW);
 		}
