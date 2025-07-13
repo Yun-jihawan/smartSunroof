@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Rename resource &apos;Sunroof/Core/Src/ADC.c&apos; to &apos;adc.c&apos;" description="Rename resource &apos;ADC.c&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Core/Src/ADC.c" name="adc.c" stamp="1745921865702" updateReferences="true"/>
-</session>

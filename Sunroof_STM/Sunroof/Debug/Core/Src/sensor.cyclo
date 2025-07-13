@@ -1,3 +1,0 @@
-../Core/Src/sensor.c:9:10:HW_AdcReadChannel	2
-../Core/Src/sensor.c:49:6:read_illum	1
-../Core/Src/sensor.c:54:6:read_rain	1
